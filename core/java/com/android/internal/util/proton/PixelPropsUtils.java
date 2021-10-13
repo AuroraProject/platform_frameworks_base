@@ -72,6 +72,7 @@ public final class PixelPropsUtils {
         "com.google.android.apps.customization.pixel",
         "com.google.android.apps.fitness",
         "com.google.android.apps.gcs",
+        "com.google.android.apps.googleassistant",
         "com.google.android.apps.maps",
         "com.google.android.apps.messaging",
         "com.google.android.apps.nexuslauncher",
