@@ -95,6 +95,7 @@ public final class PixelPropsUtils {
         "com.google.android.deskclock",
         "com.google.android.dialer",
         "com.google.android.ext.services",
+        "com.google.android.gm",
         "com.google.android.gms",
         "com.google.android.gms.location.history",
         "com.google.android.gsf",
