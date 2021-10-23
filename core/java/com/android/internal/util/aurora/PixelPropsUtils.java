@@ -67,6 +67,7 @@ public final class PixelPropsUtils {
     );
 
     private static final List<String> packagesToChange = List.of(
+        "com.android.chrome",
         "com.android.vending",
         "com.breel.wallpapers20",
         "com.google.android.apps.customization.pixel",
