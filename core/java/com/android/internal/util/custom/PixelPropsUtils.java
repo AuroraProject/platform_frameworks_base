@@ -34,6 +34,7 @@ public class PixelPropsUtils {
     private static final Map<String, Object> propsToChangePixel6;
     private static final String[] packagesToChangePixel6 = {
             "com.google.android.apps.googleassistant",
+	    "com.google.android.apps.photos"
     };
 
     private static final Map<String, Object> propsToChangePixel5;
