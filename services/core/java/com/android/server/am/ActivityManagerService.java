@@ -188,7 +188,6 @@ import android.app.SyncNotedAppOp;
 import android.app.WaitResult;
 import android.app.backup.BackupManager.OperationType;
 import android.app.backup.IBackupManager;
-import android.app.compat.gms.GmsCompat;
 import android.app.job.JobParameters;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageEvents.Event;
@@ -11926,10 +11925,6 @@ public class ActivityManagerService extends IActivityManager.Stub
 
     boolean isSingleton(String componentProcessName, ApplicationInfo aInfo,
             String className, int flags) {
-        if (GmsCompat.isGmsApp(aInfo)) {
-            return false;
-        }
-
         boolean result = false;
         // For apps that don't have pre-defined UIDs, check for permission
         if (UserHandle.getAppId(aInfo.uid) >= FIRST_APPLICATION_UID) {
