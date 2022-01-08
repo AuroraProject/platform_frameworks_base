@@ -202,7 +202,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"Dịch vụ GNSS"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"Dịch vụ Thông báo của cảm biến"</string>
     <string name="twilight_service" msgid="8964898045693187224">"Dịch vụ Twilight"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"Trình phát hiện múi giờ (Không có kết nối)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"Dịch vụ cập nhật thời gian GNSS"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"Dịch vụ quản lý tính năng nhận dạng nhạc"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"Thiết bị của bạn sẽ bị xóa"</string>
@@ -610,6 +609,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"Dùng vân tay của bạn hoặc phương thức khóa màn hình để tiếp tục"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"Đã xảy ra lỗi. Hãy thử lại."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"Biểu tượng vân tay"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"Mở khóa bằng khuôn mặt"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"Vấn đề với tính năng Mở khóa bằng khuôn mặt"</string>
@@ -662,6 +662,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"Dùng khuôn mặt của bạn hoặc phương thức khóa màn hình để tiếp tục"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"Đã xảy ra lỗi. Hãy thử lại."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"Biểu tượng khuôn mặt"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"đọc cài đặt đồng bộ hóa"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"Cho phép ứng dụng đọc cài đặt đồng bộ hóa cho tài khoản. Ví dụ: việc này có thể xác định liệu ứng dụng Mọi người đã được đồng bộ hóa với tài khoản chưa."</string>
@@ -1072,7 +1073,7 @@
     <string name="weeks" msgid="3516247214269821391">"tuần"</string>
     <string name="year" msgid="5182610307741238982">"năm"</string>
     <string name="years" msgid="5797714729103773425">"năm"</string>
-    <string name="now_string_shortest" msgid="3684914126941650330">"ngay lúc này"</string>
+    <string name="now_string_shortest" msgid="3684914126941650330">"vừa xong"</string>
     <plurals name="duration_minutes_shortest" formatted="false" msgid="7519574894537185135">
       <item quantity="other"><xliff:g id="COUNT_1">%d</xliff:g>ph</item>
       <item quantity="one"><xliff:g id="COUNT_0">%d</xliff:g>ph</item>
@@ -1483,6 +1484,7 @@
     <string name="deny" msgid="6632259981847676572">"Từ chối"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"Đã yêu cầu quyền"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"Đã yêu cầu quyền\ncho tài khoản <xliff:g id="ACCOUNT">%s</xliff:g>."</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"Quyền do <xliff:g id="APP">%1$s</xliff:g>\nyêu cầu cho tài khoản <xliff:g id="ACCOUNT">%2$s</xliff:g>."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"Bạn đang sử dụng ứng dụng này bên ngoài hồ sơ công việc của mình"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"Bạn đang sử dụng ứng dụng này trong hồ sơ công việc của mình"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"Phương thức nhập"</string>

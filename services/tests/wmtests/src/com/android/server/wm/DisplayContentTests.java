@@ -42,6 +42,7 @@ import static android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_B
 import static android.view.WindowManager.LayoutParams.FIRST_SUB_WINDOW;
 import static android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
 import static android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+import static android.view.WindowManager.LayoutParams.FLAG_SECURE;
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 import static android.view.WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION;
@@ -49,6 +50,7 @@ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_STARTING;
 import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
+import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD_DIALOG;
 import static android.view.WindowManager.LayoutParams.TYPE_NAVIGATION_BAR;
 import static android.view.WindowManager.LayoutParams.TYPE_NOTIFICATION_SHADE;
 import static android.view.WindowManager.LayoutParams.TYPE_SCREENSHOT;
@@ -1563,6 +1565,12 @@ public class DisplayContentTests extends WindowTestsBase {
         mDisplayContent.mFixedRotationTransitionListener.onFinishRecentsAnimation();
         assertTrue(displayRotation.updateRotationUnchecked(false));
 
+        // Rotation can be updated if the policy is not ok to animate (e.g. going to sleep).
+        mDisplayContent.mFixedRotationTransitionListener.onStartRecentsAnimation(recentsActivity);
+        displayRotation.setRotation((displayRotation.getRotation() + 1) % 4);
+        ((TestWindowManagerPolicy) mWm.mPolicy).mOkToAnimate = false;
+        assertTrue(displayRotation.updateRotationUnchecked(false));
+
         // Rotation can be updated if the recents animation is animating but it is not on top, e.g.
         // switching activities in different orientations by quickstep gesture.
         mDisplayContent.mFixedRotationTransitionListener.onStartRecentsAnimation(recentsActivity);
@@ -1743,6 +1751,31 @@ public class DisplayContentTests extends WindowTestsBase {
         WindowState result = display.findScrollCaptureTargetWindow(null,
                 ActivityTaskManager.INVALID_TASK_ID);
         assertEquals(activityWindow, result);
+    }
+
+    @Test
+    public void testFindScrollCaptureTargetWindow_secure() {
+        DisplayContent display = createNewDisplay();
+        Task rootTask = createTask(display);
+        Task task = createTaskInRootTask(rootTask, 0 /* userId */);
+        WindowState secureWindow = createWindow(null, TYPE_APPLICATION, "Secure Window");
+        secureWindow.mAttrs.flags |= FLAG_SECURE;
+
+        WindowState result = display.findScrollCaptureTargetWindow(null,
+                ActivityTaskManager.INVALID_TASK_ID);
+        assertNull(result);
+    }
+
+    @Test
+    public void testFindScrollCaptureTargetWindow_secureTaskId() {
+        DisplayContent display = createNewDisplay();
+        Task rootTask = createTask(display);
+        Task task = createTaskInRootTask(rootTask, 0 /* userId */);
+        WindowState secureWindow = createWindow(null, TYPE_APPLICATION, "Secure Window");
+        secureWindow.mAttrs.flags |= FLAG_SECURE;
+
+        WindowState result = display.findScrollCaptureTargetWindow(null,  task.mTaskId);
+        assertNull(result);
     }
 
     @Test
@@ -2139,6 +2172,21 @@ public class DisplayContentTests extends WindowTestsBase {
     }
 
     @Test
+    public void testKeyguardGoingAwayWhileAodShown() {
+        mDisplayContent.getDisplayPolicy().setAwake(true);
+
+        final WindowState appWin = createWindow(null, TYPE_APPLICATION, mDisplayContent, "appWin");
+        final ActivityRecord activity = appWin.mActivityRecord;
+
+        mAtm.mKeyguardController.setKeyguardShown(true /* keyguardShowing */,
+                true /* aodShowing */);
+        assertFalse(activity.isVisibleRequested());
+
+        mAtm.mKeyguardController.keyguardGoingAway(0 /* flags */);
+        assertTrue(activity.isVisibleRequested());
+    }
+
+    @Test
     public void testRemoveRootTaskInWindowingModes() {
         removeRootTaskTests(() -> mRootWindowContainer.removeRootTasksInWindowingModes(
                 WINDOWING_MODE_FULLSCREEN));
@@ -2173,6 +2221,34 @@ public class DisplayContentTests extends WindowTestsBase {
                 createWindow(null, TYPE_BASE_APPLICATION, mDisplayContent, "nextImeAppTarget");
         mDisplayContent.setImeLayeringTarget(nextImeAppTarget);
         assertNotEquals(imeChildWindow, mDisplayContent.findFocusedWindow());
+    }
+
+    @UseTestDisplay(addWindows = W_INPUT_METHOD)
+    @Test
+    public void testImeMenuDialogFocusWhenImeLayeringTargetChanges() {
+        final WindowState imeMenuDialog =
+                createWindow(mImeWindow, TYPE_INPUT_METHOD_DIALOG, "imeMenuDialog");
+        makeWindowVisibleAndDrawn(imeMenuDialog, mImeWindow);
+        assertTrue(imeMenuDialog.canReceiveKeys());
+        mDisplayContent.setInputMethodWindowLocked(mImeWindow);
+
+        // Verify imeMenuDialog can be focused window if the next IME target requests IME visible.
+        final WindowState imeAppTarget =
+                createWindow(null, TYPE_BASE_APPLICATION, mDisplayContent, "imeAppTarget");
+        mDisplayContent.setImeLayeringTarget(imeAppTarget);
+        spyOn(imeAppTarget);
+        doReturn(true).when(imeAppTarget).getRequestedVisibility(ITYPE_IME);
+        assertEquals(imeMenuDialog, mDisplayContent.findFocusedWindow());
+
+        // Verify imeMenuDialog doesn't be focused window if the next IME target does not
+        // request IME visible.
+        final WindowState nextImeAppTarget =
+                createWindow(null, TYPE_BASE_APPLICATION, mDisplayContent, "nextImeAppTarget");
+        spyOn(nextImeAppTarget);
+        doReturn(true).when(nextImeAppTarget).isAnimating(PARENTS | TRANSITION,
+                ANIMATION_TYPE_APP_TRANSITION);
+        mDisplayContent.setImeLayeringTarget(nextImeAppTarget);
+        assertNotEquals(imeMenuDialog, mDisplayContent.findFocusedWindow());
     }
 
     private void removeRootTaskTests(Runnable runnable) {

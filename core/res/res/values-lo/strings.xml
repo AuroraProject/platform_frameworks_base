@@ -202,7 +202,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"ບໍລິການ GNSS"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"ບໍລິການການແຈ້ງເຕືອນເຊັນເຊີ"</string>
     <string name="twilight_service" msgid="8964898045693187224">"ບໍລິການ Twilight"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"ຕົວກວດຫາເຂດເວລາ (ບໍ່ມີການເຊື່ອມຕໍ່)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"ບໍລິການອັບເດດເວລາ GNSS"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"ບໍລິການຕົວຈັດການການຈຳແນກເພງ"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"ອຸ​ປະ​ກອນ​ຂອງ​ທ່ານ​ຈະ​ຖືກ​ລຶບ"</string>
@@ -610,6 +609,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"ໃຊ້ລາຍນິ້ວມື ຫຼື ການລັອກໜ້າຈໍຂອງທ່ານເພື່ອດຳເນີນການຕໍ່"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"ມີບາງຢ່າງຜິດພາດເກີດຂຶ້ນ. ກະລຸນາລອງໃໝ່."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"ໄອຄອນລາຍນິ້ວມື"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"ປົດລັອກດ້ວຍໜ້າ"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"ເກີດບັນຫາກັບການປົດລັອກດ້ວຍໜ້າ"</string>
@@ -662,6 +662,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"ໃຊ້ໃບໜ້າ ຫຼື ການລັອກໜ້າຈໍຂອງທ່ານເພື່ອດຳເນີນການຕໍ່"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"ມີບາງຢ່າງຜິດພາດເກີດຂຶ້ນ. ກະລຸນາລອງໃໝ່."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"ໄອຄອນໃບໜ້າ"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"ອ່ານການຕັ້ງຄ່າຊິ້ງຂໍ້ມູນ"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"ອະນຸຍາດໃຫ້ແອັບຯ ອ່ານການຕັ້ງຄ່າການຊິ້ງຂໍ້ມູນຂອງບັນຊີໄດ້. ຕົວຢ່າງເຊັ່ນ: ມັນຈະສາມາດກວດສອບໄດ້ແອັບຯ People ຖືກຊິ້ງຂໍ້ມູນກັບບັນຊີໃດນຶ່ງແລ້ວຫຼືຍັງ."</string>
@@ -1483,6 +1484,7 @@
     <string name="deny" msgid="6632259981847676572">"ປະ​ຕິ​ເສດ"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"ຕ້ອງການການອະນຸຍາດ"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"ຮ້ອງຂໍການກຳນົດສິດ\nສຳລັບບັນຊີ <xliff:g id="ACCOUNT">%s</xliff:g> ແລ້ວ."</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"ຮ້ອງຂໍການອະນຸຍາດໂດຍ <xliff:g id="APP">%1$s</xliff:g>\nສຳລັບບັນຊີ <xliff:g id="ACCOUNT">%2$s</xliff:g>."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"​ທ່ານ​ກຳ​ລັງ​ໃຊ້​ແອັບຯ​ນີ້ນອກ​ໂປຣ​ໄຟລ໌​ບ່ອນ​ເຮັດ​ວຽກ​ຂອງ​ທ່ານ"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"​ທ່ານ​ກຳ​ລັງ​ໃຊ້​ແອັບຯ​ນີ້​ໃນ​ໂປຣ​ໄຟລ໌​​ບ່ອນ​ເຮັດ​ວຽກ​ຂອງ​ທ່ານ"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"ວິທີການປ້ອນຂໍ້ມູນ"</string>
@@ -2290,7 +2292,7 @@
     <string name="sensor_privacy_start_use_mic_notification_content_title" msgid="2420858361276370367">"ຍົກເລີກການບລັອກໄມໂຄຣໂຟນອຸປະກອນ"</string>
     <string name="sensor_privacy_start_use_camera_notification_content_title" msgid="7287720213963466672">"ຍົກເລີກການບລັອກອຸປະກອນກ້ອງຖ່າຍຮູບ"</string>
     <string name="sensor_privacy_start_use_notification_content_text" msgid="7595608891015777346">"ສຳລັບ &lt;b&gt;<xliff:g id="APP">%s</xliff:g>&lt;/b&gt; ແລະ ແອັບ ແລະ ບໍລິການທັງໝົດ"</string>
-    <string name="sensor_privacy_start_use_dialog_turn_on_button" msgid="7089318886628390827">"ຍົກເລີກການບລັອກ"</string>
+    <string name="sensor_privacy_start_use_dialog_turn_on_button" msgid="7089318886628390827">"ປົດບລັອກ"</string>
     <string name="sensor_privacy_notification_channel_label" msgid="936036783155261349">"ຄວາມເປັນສ່ວນຕົວເຊັນເຊີ"</string>
     <string name="splash_screen_view_icon_description" msgid="180638751260598187">"ໄອຄອນແອັບພລິເຄຊັນ"</string>
     <string name="splash_screen_view_branding_description" msgid="7911129347402728216">"ຮູບແບຣນແອັບພລິເຄຊັນ"</string>

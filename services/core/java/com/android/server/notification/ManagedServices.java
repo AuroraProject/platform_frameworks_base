@@ -570,10 +570,12 @@ abstract public class ManagedServices {
     protected final void migrateToXml() {
         for (UserInfo user : mUm.getUsers()) {
             final ContentResolver cr = mContext.getContentResolver();
-            addApprovedList(Settings.Secure.getStringForUser(
-                    cr,
-                    getConfig().secureSettingName,
-                    user.id), user.id, true);
+            if (!TextUtils.isEmpty(getConfig().secureSettingName)) {
+                addApprovedList(Settings.Secure.getStringForUser(
+                        cr,
+                        getConfig().secureSettingName,
+                        user.id), user.id, true);
+            }
             if (!TextUtils.isEmpty(getConfig().secondarySettingName)) {
                 addApprovedList(Settings.Secure.getStringForUser(
                         cr,
@@ -1534,7 +1536,7 @@ abstract public class ManagedServices {
                 @Override
                 public void onNullBinding(ComponentName name) {
                     Slog.v(TAG, "onNullBinding() called with: name = [" + name + "]");
-                    mServicesBound.remove(servicesBindingTag);
+                    mContext.unbindService(this);
                 }
             };
             if (!mContext.bindServiceAsUser(intent,

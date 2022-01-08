@@ -26,7 +26,6 @@ import android.annotation.WorkerThread;
 import android.app.Activity;
 import android.app.assist.ActivityId;
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
@@ -63,10 +62,7 @@ import java.util.function.BiConsumer;
  */
 public class UiTranslationController {
 
-    // TODO(b/182433547): remove Build.IS_DEBUGGABLE before ship. Enable the logging in debug build
-    //  to help the debug during the development phase
-    public static final boolean DEBUG = Log.isLoggable(UiTranslationManager.LOG_TAG, Log.DEBUG)
-            || Build.IS_DEBUGGABLE;
+    public static final boolean DEBUG = Log.isLoggable(UiTranslationManager.LOG_TAG, Log.DEBUG);
 
     private static final String TAG = "UiTranslationController";
     @NonNull
@@ -238,9 +234,7 @@ public class UiTranslationController {
             }
             pw.print(outerPrefix); pw.print("padded views: "); pw.println(mViewsToPadContent);
         }
-        // TODO(b/182433547): we will remove debug rom condition before S release then we change
-        //  change this back to "DEBUG"
-        if (Log.isLoggable(UiTranslationManager.LOG_TAG, Log.DEBUG)) {
+        if (DEBUG) {
             dumpViewByTraversal(outerPrefix, pw);
         }
     }
@@ -362,7 +356,11 @@ public class UiTranslationController {
             }
             for (int i = 0; i < translatedResult.size(); i++) {
                 final AutofillId autofillId = new AutofillId(translatedResult.keyAt(i));
-                final View view = mViews.get(autofillId).get();
+                final WeakReference<View> viewRef = mViews.get(autofillId);
+                if (viewRef == null) {
+                    continue;
+                }
+                final View view = viewRef.get();
                 if (view == null) {
                     Log.w(TAG, "onTranslationCompleted: the view for autofill id " + autofillId
                             + " may be gone.");
@@ -414,7 +412,6 @@ public class UiTranslationController {
             for (int i = 0; i < resultCount; i++) {
                 final ViewTranslationResponse response = translatedResult.valueAt(i);
                 if (DEBUG) {
-                    // TODO(b/182433547): remove before S release
                     Log.v(TAG, "onTranslationCompleted: "
                             + sanitizedViewTranslationResponse(response));
                 }
@@ -423,22 +420,30 @@ public class UiTranslationController {
                     Log.w(TAG, "No AutofillId is set in ViewTranslationResponse");
                     continue;
                 }
-                final View view = mViews.get(autofillId).get();
+                final WeakReference<View> viewRef = mViews.get(autofillId);
+                if (viewRef == null) {
+                    continue;
+                }
+                final View view = viewRef.get();
                 if (view == null) {
                     Log.w(TAG, "onTranslationCompleted: the view for autofill id " + autofillId
                             + " may be gone.");
                     continue;
                 }
                 mActivity.runOnUiThread(() -> {
+                    ViewTranslationCallback callback = view.getViewTranslationCallback();
                     if (view.getViewTranslationResponse() != null
                             && view.getViewTranslationResponse().equals(response)) {
-                        if (DEBUG) {
-                            Log.d(TAG, "Duplicate ViewTranslationResponse for " + autofillId
-                                    + ". Ignoring.");
+                        if (callback instanceof TextViewTranslationCallback) {
+                            if (((TextViewTranslationCallback) callback).isShowingTranslation()) {
+                                if (DEBUG) {
+                                    Log.d(TAG, "Duplicate ViewTranslationResponse for " + autofillId
+                                            + ". Ignoring.");
+                                }
+                                return;
+                            }
                         }
-                        return;
                     }
-                    ViewTranslationCallback callback = view.getViewTranslationCallback();
                     if (callback == null) {
                         if (view instanceof TextView) {
                             // developer doesn't provide their override, we set the default TextView
@@ -597,9 +602,8 @@ public class UiTranslationController {
             final View rootView = roots.get(rootNum).getView();
             if (rootView instanceof ViewGroup) {
                 findViewsTraversalByAutofillIds((ViewGroup) rootView, sourceViewIds);
-            } else {
-                addViewIfNeeded(sourceViewIds, rootView);
             }
+            addViewIfNeeded(sourceViewIds, rootView);
         }
     }
 
@@ -610,9 +614,8 @@ public class UiTranslationController {
             final View child = viewGroup.getChildAt(i);
             if (child instanceof ViewGroup) {
                 findViewsTraversalByAutofillIds((ViewGroup) child, sourceViewIds);
-            } else {
-                addViewIfNeeded(sourceViewIds, child);
             }
+            addViewIfNeeded(sourceViewIds, child);
         }
     }
 
@@ -635,8 +638,8 @@ public class UiTranslationController {
                 for (int i = 0; i < viewCounts; i++) {
                     final View view = views.valueAt(i).get();
                     if (DEBUG) {
-                        // TODO(b/182433547): remove before S release
-                        Log.d(TAG, "runForEachView: view= " + view);
+                        Log.d(TAG, "runForEachView for autofillId = " + (view != null
+                                ? view.getAutofillId() : " null"));
                     }
                     if (view == null || view.getViewTranslationCallback() == null) {
                         if (DEBUG) {
@@ -696,8 +699,6 @@ public class UiTranslationController {
                 return "Unknown state (" + state + ")";
         }
     }
-
-    // TODO(b/182433547): maybe remove below before S release
 
     /**
      * Returns a sanitized string representation of {@link ViewTranslationRequest};

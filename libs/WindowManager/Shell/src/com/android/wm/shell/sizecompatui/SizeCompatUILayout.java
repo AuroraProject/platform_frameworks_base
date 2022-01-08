@@ -23,13 +23,12 @@ import static android.view.WindowManager.LayoutParams.PRIVATE_FLAG_TRUSTED_OVERL
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 
 import android.annotation.Nullable;
-import android.app.ActivityClient;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Binder;
-import android.os.IBinder;
+import android.util.Log;
 import android.view.SurfaceControl;
 import android.view.View;
 import android.view.WindowManager;
@@ -47,12 +46,12 @@ import com.android.wm.shell.common.SyncTransactionQueue;
 class SizeCompatUILayout {
     private static final String TAG = "SizeCompatUILayout";
 
-    private final SyncTransactionQueue mSyncQueue;
+    final SyncTransactionQueue mSyncQueue;
+    private final SizeCompatUIController.SizeCompatUICallback mCallback;
     private Context mContext;
     private Configuration mTaskConfig;
     private final int mDisplayId;
     private final int mTaskId;
-    private IBinder mActivityToken;
     private ShellTaskOrganizer.TaskListener mTaskListener;
     private DisplayLayout mDisplayLayout;
 
@@ -72,15 +71,16 @@ class SizeCompatUILayout {
     final int mPopupOffsetY;
     boolean mShouldShowHint;
 
-    SizeCompatUILayout(SyncTransactionQueue syncQueue, Context context, Configuration taskConfig,
-            int taskId, IBinder activityToken, ShellTaskOrganizer.TaskListener taskListener,
+    SizeCompatUILayout(SyncTransactionQueue syncQueue,
+            SizeCompatUIController.SizeCompatUICallback callback, Context context,
+            Configuration taskConfig, int taskId, ShellTaskOrganizer.TaskListener taskListener,
             DisplayLayout displayLayout, boolean hasShownHint) {
         mSyncQueue = syncQueue;
+        mCallback = callback;
         mContext = context.createConfigurationContext(taskConfig);
         mTaskConfig = taskConfig;
         mDisplayId = mContext.getDisplayId();
         mTaskId = taskId;
-        mActivityToken = activityToken;
         mTaskListener = taskListener;
         mDisplayLayout = displayLayout;
         mShouldShowHint = !hasShownHint;
@@ -141,12 +141,11 @@ class SizeCompatUILayout {
     }
 
     /** Called when size compat info changed. */
-    void updateSizeCompatInfo(Configuration taskConfig, IBinder activityToken,
+    void updateSizeCompatInfo(Configuration taskConfig,
             ShellTaskOrganizer.TaskListener taskListener, boolean isImeShowing) {
         final Configuration prevTaskConfig = mTaskConfig;
         final ShellTaskOrganizer.TaskListener prevTaskListener = mTaskListener;
         mTaskConfig = taskConfig;
-        mActivityToken = activityToken;
         mTaskListener = taskListener;
 
         // Update configuration.
@@ -253,7 +252,7 @@ class SizeCompatUILayout {
 
     /** Called when the restart button is clicked. */
     void onRestartButtonClicked() {
-        ActivityClient.getInstance().restartActivityProcessIfVisible(mActivityToken);
+        mCallback.onSizeCompatRestartButtonClicked(mTaskId);
     }
 
     /** Called when the restart button is long clicked. */
@@ -308,6 +307,10 @@ class SizeCompatUILayout {
 
     private void updateSurfacePosition(SurfaceControl leash, int positionX, int positionY) {
         mSyncQueue.runInSync(t -> {
+            if (!leash.isValid()) {
+                Log.w(TAG, "The leash has been released.");
+                return;
+            }
             t.setPosition(leash, positionX, positionY);
             // The size compat UI should be the topmost child of the Task in case there can be more
             // than one children.

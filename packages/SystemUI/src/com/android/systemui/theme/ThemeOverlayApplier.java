@@ -132,14 +132,18 @@ public class ThemeOverlayApplier implements Dumpable {
     /* Target package for each overlay category. */
     private final Map<String, String> mCategoryToTargetPackage = new ArrayMap<>();
     private final OverlayManager mOverlayManager;
-    private final Executor mExecutor;
+    private final Executor mBgExecutor;
+    private final Executor mMainExecutor;
     private final String mLauncherPackage;
     private final String mThemePickerPackage;
 
-    public ThemeOverlayApplier(OverlayManager overlayManager, Executor executor,
+    public ThemeOverlayApplier(OverlayManager overlayManager,
+            Executor bgExecutor,
+            Executor mainExecutor,
             String launcherPackage, String themePickerPackage, DumpManager dumpManager) {
         mOverlayManager = overlayManager;
-        mExecutor = executor;
+        mBgExecutor = bgExecutor;
+        mMainExecutor = mainExecutor;
         mLauncherPackage = launcherPackage;
         mThemePickerPackage = themePickerPackage;
         mTargetPackageToCategories.put(ANDROID_PACKAGE, Sets.newHashSet(
@@ -170,12 +174,12 @@ public class ThemeOverlayApplier implements Dumpable {
      * Apply the set of overlay packages to the set of {@code UserHandle}s provided. Overlays that
      * affect sysui will also be applied to the system user.
      */
-    void applyCurrentUserOverlays(
+    public void applyCurrentUserOverlays(
             Map<String, OverlayIdentifier> categoryToPackage,
             FabricatedOverlay[] pendingCreation,
             int currentUser,
             Set<UserHandle> managedProfiles) {
-        mExecutor.execute(() -> {
+        mBgExecutor.execute(() -> {
 
             // Disable all overlays that have not been specified in the user setting.
             final Set<String> overlayCategoriesToDisable = new HashSet<>(THEME_CATEGORIES);
@@ -197,8 +201,10 @@ public class ThemeOverlayApplier implements Dumpable {
                     .collect(Collectors.toList());
 
             OverlayManagerTransaction.Builder transaction = getTransactionBuilder();
+            HashSet<OverlayIdentifier> identifiersPending = new HashSet<>();
             if (pendingCreation != null) {
                 for (FabricatedOverlay overlay : pendingCreation) {
+                    identifiersPending.add(overlay.getIdentifier());
                     transaction.registerFabricatedOverlay(overlay);
                 }
             }
@@ -206,14 +212,14 @@ public class ThemeOverlayApplier implements Dumpable {
             for (Pair<String, String> packageToDisable : overlaysToDisable) {
                 OverlayIdentifier overlayInfo = new OverlayIdentifier(packageToDisable.second);
                 setEnabled(transaction, overlayInfo, packageToDisable.first, currentUser,
-                        managedProfiles, false);
+                        managedProfiles, false, identifiersPending.contains(overlayInfo));
             }
 
             for (String category : THEME_CATEGORIES) {
                 if (categoryToPackage.containsKey(category)) {
                     OverlayIdentifier overlayInfo = categoryToPackage.get(category);
                     setEnabled(transaction, overlayInfo, category, currentUser, managedProfiles,
-                            true);
+                            true, identifiersPending.contains(overlayInfo));
                 }
             }
 
@@ -233,10 +239,18 @@ public class ThemeOverlayApplier implements Dumpable {
     @AnyThread
     private void setEnabled(OverlayManagerTransaction.Builder transaction,
             OverlayIdentifier identifier, String category, int currentUser,
-            Set<UserHandle> managedProfiles, boolean enabled) {
+            Set<UserHandle> managedProfiles, boolean enabled, boolean pendingCreation) {
         if (DEBUG) {
             Log.d(TAG, "setEnabled: " + identifier.getPackageName() + " category: "
                     + category + ": " + enabled);
+        }
+
+        OverlayInfo overlayInfo = mOverlayManager.getOverlayInfo(identifier,
+                UserHandle.of(currentUser));
+        if (overlayInfo == null && !pendingCreation) {
+            Log.i(TAG, "Won't enable " + identifier + ", it doesn't exist for user"
+                    + currentUser);
+            return;
         }
 
         transaction.setEnabled(identifier, enabled, currentUser);
@@ -247,7 +261,7 @@ public class ThemeOverlayApplier implements Dumpable {
 
         // Do not apply Launcher or Theme picker overlays to managed users. Apps are not
         // installed in there.
-        OverlayInfo overlayInfo = mOverlayManager.getOverlayInfo(identifier, UserHandle.SYSTEM);
+        overlayInfo = mOverlayManager.getOverlayInfo(identifier, UserHandle.SYSTEM);
         if (overlayInfo == null || overlayInfo.targetPackageName.equals(mLauncherPackage)
                 || overlayInfo.targetPackageName.equals(mThemePickerPackage)) {
             return;

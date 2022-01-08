@@ -484,6 +484,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     int mLidNavigationAccessibility;
     int mShortPressOnPowerBehavior;
     int mLongPressOnPowerBehavior;
+    long mLongPressOnPowerAssistantTimeoutMs;
     int mVeryLongPressOnPowerBehavior;
     int mDoublePressOnPowerBehavior;
     int mTriplePressOnPowerBehavior;
@@ -732,6 +733,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     Settings.Global.POWER_BUTTON_LONG_PRESS), false, this,
                     UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.Global.getUriFor(
+                    Settings.Global.POWER_BUTTON_LONG_PRESS_DURATION_MS), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Global.getUriFor(
                     Settings.Global.POWER_BUTTON_VERY_LONG_PRESS), false, this,
                     UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.Global.getUriFor(
@@ -904,7 +908,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             }
         } else {
             // handled by single key or another power key policy.
-            mSingleKeyGestureDetector.reset();
+            if (!mSingleKeyGestureDetector.isKeyIntercepted(KEYCODE_POWER)) {
+                mSingleKeyGestureDetector.reset();
+            }
         }
 
         finishPowerKeyPress();
@@ -918,7 +924,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void powerPress(long eventTime, int count, boolean beganFromNonInteractive) {
-        mCameraGestureTriggered = false;
         if (mDefaultDisplayPolicy.isScreenOnEarly() && !mDefaultDisplayPolicy.isScreenOnFully()) {
             Slog.i(TAG, "Suppressed redundant power key press while "
                     + "already in the process of turning the screen on.");
@@ -1068,24 +1073,18 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private int getMaxMultiPressPowerCount() {
-        // GestureLauncherService could handle power multi tap gesture.
-        if (mGestureLauncherService != null
-                && mGestureLauncherService.isEmergencyGestureEnabled()) {
-            return 5; // EMERGENCY_GESTURE_POWER_TAP_COUNT_THRESHOLD
-        }
-
+        // The actual max power button press count is 5
+        // (EMERGENCY_GESTURE_POWER_TAP_COUNT_THRESHOLD), which is coming from
+        // GestureLauncherService.
+        // To speed up the handling of single-press of power button inside SingleKeyGestureDetector,
+        // however, we limit the max count to the number of button presses actually handled by the
+        // SingleKeyGestureDetector.
         if (mTriplePressOnPowerBehavior != MULTI_PRESS_POWER_NOTHING) {
             return 3;
         }
         if (mDoublePressOnPowerBehavior != MULTI_PRESS_POWER_NOTHING) {
             return 2;
         }
-
-        if (mGestureLauncherService != null
-                && mGestureLauncherService.isCameraDoubleTapPowerEnabled()) {
-            return 2; // CAMERA_POWER_TAP_COUNT_THRESHOLD
-        }
-
         return 1;
     }
 
@@ -1737,6 +1736,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 com.android.internal.R.integer.config_shortPressOnPowerBehavior);
         mLongPressOnPowerBehavior = mContext.getResources().getInteger(
                 com.android.internal.R.integer.config_longPressOnPowerBehavior);
+        mLongPressOnPowerAssistantTimeoutMs = mContext.getResources().getInteger(
+                com.android.internal.R.integer.config_longPressOnPowerDurationMs);
         mVeryLongPressOnPowerBehavior = mContext.getResources().getInteger(
                 com.android.internal.R.integer.config_veryLongPressOnPowerBehavior);
         mDoublePressOnPowerBehavior = mContext.getResources().getInteger(
@@ -1960,7 +1961,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
      */
     private final class PowerKeyRule extends SingleKeyGestureDetector.SingleKeyRule {
         PowerKeyRule(int gestures) {
-            super(KEYCODE_POWER, gestures);
+            super(mContext, KEYCODE_POWER, gestures);
         }
 
         @Override
@@ -1972,7 +1973,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         void onPress(long downTime) {
             powerPress(downTime, 1 /*count*/,
                     mSingleKeyGestureDetector.beganFromNonInteractive());
-            finishPowerKeyPress();
+        }
+
+        @Override
+        long getLongPressTimeoutMs() {
+            if (getResolvedLongPressOnPowerBehavior() == LONG_PRESS_POWER_ASSISTANT) {
+                return mLongPressOnPowerAssistantTimeoutMs;
+            } else {
+                return super.getLongPressTimeoutMs();
+            }
         }
 
         @Override
@@ -1995,7 +2004,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         @Override
         void onMultiPress(long downTime, int count) {
             powerPress(downTime, count, mSingleKeyGestureDetector.beganFromNonInteractive());
-            finishPowerKeyPress();
         }
     }
 
@@ -2004,7 +2012,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
      */
     private final class BackKeyRule extends SingleKeyGestureDetector.SingleKeyRule {
         BackKeyRule(int gestures) {
-            super(KEYCODE_BACK, gestures);
+            super(mContext, KEYCODE_BACK, gestures);
         }
 
         @Override
@@ -2024,7 +2032,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void initSingleKeyGestureRules() {
-        mSingleKeyGestureDetector = new SingleKeyGestureDetector(mContext);
+        mSingleKeyGestureDetector = new SingleKeyGestureDetector();
 
         int powerKeyGestures = 0;
         if (hasVeryLongPressOnPowerBehavior()) {
@@ -2122,6 +2130,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     Settings.Global.POWER_BUTTON_LONG_PRESS,
                     mContext.getResources().getInteger(
                             com.android.internal.R.integer.config_longPressOnPowerBehavior));
+            mLongPressOnPowerAssistantTimeoutMs = Settings.Global.getLong(
+                    mContext.getContentResolver(),
+                    Settings.Global.POWER_BUTTON_LONG_PRESS_DURATION_MS,
+                    mContext.getResources().getInteger(
+                            com.android.internal.R.integer.config_longPressOnPowerDurationMs));
             mVeryLongPressOnPowerBehavior = Settings.Global.getInt(resolver,
                     Settings.Global.POWER_BUTTON_VERY_LONG_PRESS,
                     mContext.getResources().getInteger(
@@ -3849,17 +3862,21 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (mGestureLauncherService == null) {
             return false;
         }
-
+        mCameraGestureTriggered = false;
         final MutableBoolean outLaunched = new MutableBoolean(false);
-        final boolean gesturedServiceIntercepted = mGestureLauncherService.interceptPowerKeyDown(
-                event, interactive, outLaunched);
-        if (outLaunched.value) {
-            mCameraGestureTriggered = true;
+        final boolean intercept =
+                mGestureLauncherService.interceptPowerKeyDown(event, interactive, outLaunched);
+        if (!outLaunched.value) {
+            // If GestureLauncherService intercepted the power key, but didn't launch camera app,
+            // we should still return the intercept result. This prevents the single key gesture
+            // detector from processing the power key later on.
+            return intercept;
         }
-        if (outLaunched.value && mRequestedOrSleepingDefaultDisplay) {
+        mCameraGestureTriggered = true;
+        if (mRequestedOrSleepingDefaultDisplay) {
             mCameraGestureTriggeredDuringGoingToSleep = true;
         }
-        return gesturedServiceIntercepted;
+        return true;
     }
 
     /**
@@ -4232,7 +4249,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mDefaultDisplayRotation.updateOrientationListener();
 
         if (mKeyguardDelegate != null) {
-            mKeyguardDelegate.onFinishedGoingToSleep(pmSleepReason, mCameraGestureTriggered);
+            mKeyguardDelegate.onFinishedGoingToSleep(pmSleepReason,
+                    mCameraGestureTriggeredDuringGoingToSleep);
         }
         if (mDisplayFoldController != null) {
             mDisplayFoldController.finishedGoingToSleep();
@@ -4428,6 +4446,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // Called on the DisplayManager's DisplayPowerController thread.
     @Override
     public void screenTurnedOn(int displayId) {
+        if (DEBUG_WAKEUP) Slog.i(TAG, "Display " + displayId + " turned on...");
+
         if (displayId != DEFAULT_DISPLAY) {
             return;
         }
@@ -4608,6 +4628,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     public boolean inKeyguardRestrictedKeyInputMode() {
         if (mKeyguardDelegate == null) return false;
         return mKeyguardDelegate.isInputRestricted();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isKeyguardUnoccluding() {
+        return keyguardOn() && !mWindowManagerFuncs.isAppTransitionStateIdle();
     }
 
     @Override
@@ -5328,6 +5354,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         pw.print(prefix);
                 pw.print("mLongPressOnPowerBehavior=");
                 pw.println(longPressOnPowerBehaviorToString(mLongPressOnPowerBehavior));
+        pw.print(prefix);
+        pw.print("mLongPressOnPowerAssistantTimeoutMs=");
+        pw.println(mLongPressOnPowerAssistantTimeoutMs);
         pw.print(prefix);
                 pw.print("mVeryLongPressOnPowerBehavior=");
                 pw.println(veryLongPressOnPowerBehaviorToString(mVeryLongPressOnPowerBehavior));

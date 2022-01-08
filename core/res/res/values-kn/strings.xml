@@ -202,7 +202,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"GNSS ಸೇವೆ"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"ಸೆನ್ಸರ್ ಅಧಿಸೂಚನೆ ಸೇವೆ"</string>
     <string name="twilight_service" msgid="8964898045693187224">"ಟ್ವಿಲೈಟ್ ಸೇವೆ"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"ಸಮಯವಲಯ  ಡಿಟೆಕ್ಟರ್ (ಯಾವುದೇ ಸಂಪರ್ಕ ಕಲ್ಪಿಸುವಿಕೆ ಇಲ್ಲ)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"GNSS ಸಮಯದ ಅಪ್‌ಡೇಟ್ ಸೇವೆ"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"ಸಂಗೀತ ಗುರುತಿಸುವಿಕೆ ನಿರ್ವಾಹಕ ಸೇವೆ"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"ನಿಮ್ಮ ಸಾಧನವನ್ನು ಅಳಿಸಲಾಗುತ್ತದೆ"</string>
@@ -307,7 +306,7 @@
     <string name="permgroupdesc_contacts" msgid="9163927941244182567">"ನಿಮ್ಮ ಸಂಪರ್ಕಗಳನ್ನು ಪ್ರವೇಶಿಸಲು"</string>
     <string name="permgrouplab_location" msgid="1858277002233964394">"ಸ್ಥಳ"</string>
     <string name="permgroupdesc_location" msgid="1995955142118450685">"ಈ ಸಾಧನದ ಸ್ಥಳವನ್ನು ಪ್ರವೇಶಿಸಿ"</string>
-    <string name="permgrouplab_calendar" msgid="6426860926123033230">"Calendar"</string>
+    <string name="permgrouplab_calendar" msgid="6426860926123033230">"ಕ್ಯಾಲೆಂಡರ್"</string>
     <string name="permgroupdesc_calendar" msgid="6762751063361489379">"ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್ ಪ್ರವೇಶಿಸಲು"</string>
     <string name="permgrouplab_sms" msgid="795737735126084874">"SMS"</string>
     <string name="permgroupdesc_sms" msgid="5726462398070064542">"SMS ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸಲು ಮತ್ತು ನಿರ್ವಹಿಸಲು"</string>
@@ -610,6 +609,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"ಮುಂದುವರಿಸಲು ಫಿಂಗರ್ ಪ್ರಿಂಟ್ ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಅನ್ನು ಬಳಸಿ"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"ಏನೋ ತಪ್ಪಾಗಿದೆ. ಪುನಃ ಪ್ರಯತ್ನಿಸಿ."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಐಕಾನ್"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"ಫೇಸ್ ಅನ್‌ಲಾಕ್"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"ಫೇಸ್ ಅನ್‌ಲಾಕ್ ಕುರಿತು ಸಮಸ್ಯೆ ಇದೆ"</string>
@@ -662,6 +662,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"ಮುಂದುವರಿಸಲು ನಿಮ್ಮ ಮುಖ ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಅನ್ನು ಬಳಸಿ"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"ಏನೋ ತಪ್ಪಾಗಿದೆ. ಪುನಃ ಪ್ರಯತ್ನಿಸಿ."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"ಮುಖದ ಐಕಾನ್‌"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"ಸಿಂಕ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ರೀಡ್‌ ಮಾಡು"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"ಒಂದು ಖಾತೆಯ ಸಿಂಕ್ ಸೆಟ್ಟಿಂಗ್‍‍ಗಳನ್ನು ಓದಲು ಅಪ್ಲಿಕೇಶನ್‍‍ಗೆ ಅವಕಾಶ ನೀಡುತ್ತದೆ. ಉದಾಹರಣೆಗೆ, ಖಾತೆಯೊಂದಿಗೆ ಜನರ ಅಪ್ಲಿಕೇಶನ್ ಸಿಂಕ್ ಮಾಡಲಾಗಿದೆಯೇ ಎಂಬುದನ್ನು ಇದು ನಿರ್ಧರಿಸಬಹುದು."</string>
@@ -816,7 +817,7 @@
     <string name="phoneTypeTtyTdd" msgid="532038552105328779">"TTY TDD"</string>
     <string name="phoneTypeWorkMobile" msgid="7522314392003565121">"ಕಚೇರಿ ಮೊಬೈಲ್"</string>
     <string name="phoneTypeWorkPager" msgid="3748332310638505234">"ಕಚೇರಿ ಪೇಜರ್"</string>
-    <string name="phoneTypeAssistant" msgid="757550783842231039">"Assistant"</string>
+    <string name="phoneTypeAssistant" msgid="757550783842231039">"ಅಸಿಸ್ಟೆಂಟ್"</string>
     <string name="phoneTypeMms" msgid="1799747455131365989">"MMS"</string>
     <string name="eventTypeCustom" msgid="3257367158986466481">"ಕಸ್ಟಮ್"</string>
     <string name="eventTypeBirthday" msgid="7770026752793912283">"ಜನ್ಮದಿನ"</string>
@@ -849,7 +850,7 @@
     <string name="orgTypeOther" msgid="5450675258408005553">"ಇತರೆ"</string>
     <string name="orgTypeCustom" msgid="1126322047677329218">"ಕಸ್ಟಮ್"</string>
     <string name="relationTypeCustom" msgid="282938315217441351">"ಕಸ್ಟಮ್"</string>
-    <string name="relationTypeAssistant" msgid="4057605157116589315">"Assistant"</string>
+    <string name="relationTypeAssistant" msgid="4057605157116589315">"ಅಸಿಸ್ಟೆಂಟ್"</string>
     <string name="relationTypeBrother" msgid="7141662427379247820">"ಸಹೋದರ"</string>
     <string name="relationTypeChild" msgid="9076258911292693601">"ಮಗು"</string>
     <string name="relationTypeDomesticPartner" msgid="7825306887697559238">"ಸ್ಥಳೀಯ ಪಾಲುದಾರ"</string>
@@ -1039,9 +1040,9 @@
     <string name="menu_space_shortcut_label" msgid="5949311515646872071">"space"</string>
     <string name="menu_enter_shortcut_label" msgid="6709499510082897320">"enter"</string>
     <string name="menu_delete_shortcut_label" msgid="4365787714477739080">"ಅಳಿಸಿ"</string>
-    <string name="search_go" msgid="2141477624421347086">"Search"</string>
+    <string name="search_go" msgid="2141477624421347086">"ಹುಡುಕಿ"</string>
     <string name="search_hint" msgid="455364685740251925">"ಹುಡುಕಿ…"</string>
-    <string name="searchview_description_search" msgid="1045552007537359343">"Search"</string>
+    <string name="searchview_description_search" msgid="1045552007537359343">"ಹುಡುಕಿ"</string>
     <string name="searchview_description_query" msgid="7430242366971716338">"ಪ್ರಶ್ನೆಯನ್ನು ಹುಡುಕಿ"</string>
     <string name="searchview_description_clear" msgid="1989371719192982900">"ಪ್ರಶ್ನೆಯನ್ನು ತೆರವುಗೊಳಿಸು"</string>
     <string name="searchview_description_submit" msgid="6771060386117334686">"ಪ್ರಶ್ನೆಯನ್ನು ಸಲ್ಲಿಸು"</string>
@@ -1468,7 +1469,7 @@
     <string name="tutorial_double_tap_to_zoom_message_short" msgid="1842872462124648678">"ಝೂಮ್‌ ನಿಯಂತ್ರಿಸಲು ಎರಡು ಬಾರಿ ಟ್ಯಾಪ್ ಮಾಡಿ"</string>
     <string name="gadget_host_error_inflating" msgid="2449961590495198720">"ವಿಜೆಟ್ ಸೇರಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ."</string>
     <string name="ime_action_go" msgid="5536744546326495436">"ಹೋಗು"</string>
-    <string name="ime_action_search" msgid="4501435960587287668">"Search"</string>
+    <string name="ime_action_search" msgid="4501435960587287668">"ಹುಡುಕಿ"</string>
     <string name="ime_action_send" msgid="8456843745664334138">"ಕಳುಹಿಸು"</string>
     <string name="ime_action_next" msgid="4169702997635728543">"ಮುಂದೆ"</string>
     <string name="ime_action_done" msgid="6299921014822891569">"ಮುಗಿದಿದೆ"</string>
@@ -1483,6 +1484,7 @@
     <string name="deny" msgid="6632259981847676572">"ನಿರಾಕರಿಸಿ"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"ಅನುಮತಿ ವಿನಂತಿಸಲಾಗಿದೆ"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"<xliff:g id="ACCOUNT">%s</xliff:g> ಖಾತೆಗಾಗಿ\n ಅನುಮತಿಯನ್ನು ವಿನಂತಿಸಲಾಗಿದೆ."</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"<xliff:g id="ACCOUNT">%2$s</xliff:g> ಖಾತೆಗಾಗಿ \n <xliff:g id="APP">%1$s</xliff:g> ನಿಂದ ಅನುಮತಿಯನ್ನು ವಿನಂತಿಸಲಾಗಿದೆ."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"ನಿಮ್ಮ ಕೆಲಸದ ಪ್ರೊಫೈಲ್‌ನ ಹೊರಗೆ ನೀವು ಈ ಅಪ್ಲಿಕೇಶನ್‌ ಅನ್ನು ಬಳಸುತ್ತಿರುವಿರಿ"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"ನಿಮ್ಮ ಕೆಲಸದ ಪ್ರೊಫೈಲ್‌ನಲ್ಲಿ ನೀವು ಈ ಅಪ್ಲಿಕೇಶನ್‌ ಅನ್ನು ಬಳಸುತ್ತಿರುವಿರಿ"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"ಇನ್‌ಪುಟ್ ವಿಧಾನ"</string>
@@ -1952,7 +1954,7 @@
     <string name="call_notification_answer_action" msgid="5999246836247132937">"ಉತ್ತರಿಸಿ"</string>
     <string name="call_notification_answer_video_action" msgid="2086030940195382249">"ವೀಡಿಯೊ"</string>
     <string name="call_notification_decline_action" msgid="3700345945214000726">"ನಿರಾಕರಿಸಿ"</string>
-    <string name="call_notification_hang_up_action" msgid="9130720590159188131">"ಹ್ಯಾಂಗ್ ಅಪ್"</string>
+    <string name="call_notification_hang_up_action" msgid="9130720590159188131">"ಕರೆ ಕೊನೆಗೊಳಿಸಿ"</string>
     <string name="call_notification_incoming_text" msgid="6143109825406638201">"ಒಳಬರುವ ಕರೆ"</string>
     <string name="call_notification_ongoing_text" msgid="3880832933933020875">"ಚಾಲ್ತಿಯಲ್ಲಿರುವ ಕರೆ"</string>
     <string name="call_notification_screening_text" msgid="8396931408268940208">"ಒಳಬರುವ ಕರೆಯನ್ನು ಸ್ಕ್ರೀನ್ ಮಾಡಲಾಗುತ್ತಿದೆ"</string>
@@ -1972,7 +1974,7 @@
     <string name="language_picker_section_suggested" msgid="6556199184638990447">"ಸೂಚಿತ ಭಾಷೆ"</string>
     <string name="language_picker_section_all" msgid="1985809075777564284">"ಎಲ್ಲಾ ಭಾಷೆಗಳು"</string>
     <string name="region_picker_section_all" msgid="756441309928774155">"ಎಲ್ಲಾ ಪ್ರದೇಶಗಳು"</string>
-    <string name="locale_search_menu" msgid="6258090710176422934">"Search"</string>
+    <string name="locale_search_menu" msgid="6258090710176422934">"ಹುಡುಕಿ"</string>
     <string name="app_suspended_title" msgid="888873445010322650">"ಅಪ್ಲಿಕೇಶನ್ ಲಭ್ಯವಿಲ್ಲ"</string>
     <string name="app_suspended_default_message" msgid="6451215678552004172">"<xliff:g id="APP_NAME_0">%1$s</xliff:g> ಅಪ್ಲಿಕೇಶನ್‌ ಸದ್ಯಕ್ಕೆ ಲಭ್ಯವಿಲ್ಲ. ಇದನ್ನು <xliff:g id="APP_NAME_1">%2$s</xliff:g> ನಲ್ಲಿ ನಿರ್ವಹಿಸಲಾಗುತ್ತಿದೆ."</string>
     <string name="app_suspended_more_details" msgid="211260942831587014">"ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ"</string>
@@ -2095,7 +2097,7 @@
     <string name="notification_feedback_indicator_promoted" msgid="9030204303764698640">"ಈ ಅಧಿಸೂಚನೆಗೆ ಮೇಲಿನ ಸ್ಥಾನವನ್ನು ನೀಡಲಾಗಿದೆ. ಪ್ರತಿಕ್ರಿಯೆ ನೀಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ."</string>
     <string name="notification_feedback_indicator_demoted" msgid="8880309924296450875">"ಈ ಅಧಿಸೂಚನೆಗೆ ಕೆಳಗಿನ ಸ್ಥಾನವನ್ನು ನೀಡಲಾಗಿದೆ. ಪ್ರತಿಕ್ರಿಯೆ ನೀಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ."</string>
     <string name="nas_upgrade_notification_title" msgid="8436359459300146555">"ವರ್ಧಿತ ಅಧಿಸೂಚನೆಗಳು"</string>
-    <string name="nas_upgrade_notification_content" msgid="5157550369837103337">"ಸೂಚಿಸಲಾದ ಕ್ರಿಯೆಗಳು ಮತ್ತು ಪ್ರತ್ಯುತ್ತರಗಳನ್ನು ಈಗ ವರ್ಧಿತ ಅಧಿಸೂಚನೆಗಳಿಂದ ಒದಗಿಸಲಾಗಿದೆ. Android ಅಡಾಪ್ಟಿವ್ ಅಧಿಸೂಚನೆಗಳು ಇನ್ನು ಮುಂದೆ ಬೆಂಬಲಿಸುವುದಿಲ್ಲ."</string>
+    <string name="nas_upgrade_notification_content" msgid="5157550369837103337">"ಸೂಚಿಸಲಾದ ಕ್ರಿಯೆಗಳು ಮತ್ತು ಪ್ರತ್ಯುತ್ತರಗಳನ್ನು ಈಗ ವರ್ಧಿತ ಅಧಿಸೂಚನೆಗಳು ಒದಗಿಸುತ್ತವೆ. Android ಅಡಾಪ್ಟಿವ್ ಅಧಿಸೂಚನೆಗಳು ಇನ್ನು ಮುಂದೆ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ."</string>
     <string name="nas_upgrade_notification_enable_action" msgid="3046406808378726874">"ಸರಿ"</string>
     <string name="nas_upgrade_notification_disable_action" msgid="3794833210043497982">"ಆಫ್ ಮಾಡಿ"</string>
     <string name="nas_upgrade_notification_learn_more_action" msgid="7011130656195423947">"ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ"</string>
@@ -2287,7 +2289,7 @@
     <string name="window_magnification_prompt_content" msgid="8159173903032344891">"ನೀವು ಇದೀಗ ನಿಮ್ಮ ಸ್ಕ್ರೀನ್‌ನ ಭಾಗವನ್ನು ಹಿಗ್ಗಿಸಬಹುದು"</string>
     <string name="turn_on_magnification_settings_action" msgid="8521433346684847700">"ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಆನ್ ಮಾಡಿ"</string>
     <string name="dismiss_action" msgid="1728820550388704784">"ವಜಾಗೊಳಿಸಿ"</string>
-    <string name="sensor_privacy_start_use_mic_notification_content_title" msgid="2420858361276370367">"ಸಾಧನದ ಮೈಕ್ರೋಫೋನ್ ನಿರ್ಬಂಧವನ್ನು ತೆಗೆದುಹಾಕಿ"</string>
+    <string name="sensor_privacy_start_use_mic_notification_content_title" msgid="2420858361276370367">"ಸಾಧನದ ಮೈಕ್ರೋಫೋನ್ ಅನ್‍ಬ್ಲಾಕ್ ಮಾಡಿ"</string>
     <string name="sensor_privacy_start_use_camera_notification_content_title" msgid="7287720213963466672">"ಸಾಧನದ ಕ್ಯಾಮರಾ ನಿರ್ಬಂಧವನ್ನು ತೆಗೆದುಹಾಕಿ"</string>
     <string name="sensor_privacy_start_use_notification_content_text" msgid="7595608891015777346">"&lt;b&gt;<xliff:g id="APP">%s</xliff:g>&lt;/b&gt; ಮತ್ತು ಎಲ್ಲಾ ಆ್ಯಪ್‌ಗಳು ಹಾಗೂ ಸೇವೆಗಳಿಗಾಗಿ"</string>
     <string name="sensor_privacy_start_use_dialog_turn_on_button" msgid="7089318886628390827">"ನಿರ್ಬಂಧವನ್ನು ತೆಗೆದುಹಾಕಿ"</string>

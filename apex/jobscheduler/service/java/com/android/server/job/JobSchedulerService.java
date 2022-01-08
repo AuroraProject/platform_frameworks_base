@@ -690,7 +690,6 @@ public class JobSchedulerService extends com.android.server.SystemService
 
     @VisibleForTesting
     class PendingJobComparator implements Comparator<JobStatus> {
-        private final SparseBooleanArray mUidHasEjCache = new SparseBooleanArray();
         private final SparseLongArray mEarliestRegEnqueueTimeCache = new SparseLongArray();
 
         /**
@@ -699,14 +698,11 @@ public class JobSchedulerService extends com.android.server.SystemService
         @GuardedBy("mLock")
         @VisibleForTesting
         void refreshLocked() {
-            mUidHasEjCache.clear();
             mEarliestRegEnqueueTimeCache.clear();
             for (int i = 0; i < mPendingJobs.size(); ++i) {
                 final JobStatus job = mPendingJobs.get(i);
                 final int uid = job.getSourceUid();
-                if (job.isRequestedExpeditedJob()) {
-                    mUidHasEjCache.put(uid, true);
-                } else {
+                if (!job.isRequestedExpeditedJob()) {
                     final long earliestEnqueueTime =
                             mEarliestRegEnqueueTimeCache.get(uid, Long.MAX_VALUE);
                     mEarliestRegEnqueueTimeCache.put(uid,
@@ -736,9 +732,7 @@ public class JobSchedulerService extends com.android.server.SystemService
                     return o1EJ ? -1 : 1;
                 }
             }
-            final boolean uid1HasEj = mUidHasEjCache.get(o1.getSourceUid());
-            final boolean uid2HasEj = mUidHasEjCache.get(o2.getSourceUid());
-            if ((uid1HasEj || uid2HasEj) && (o1EJ || o2EJ)) {
+            if (o1EJ || o2EJ) {
                 // We MUST prioritize EJs ahead of regular jobs within a single app. Since we do
                 // that, in order to satisfy the transitivity constraint of the comparator, if
                 // any UID has an EJ, we must ensure that the EJ is ordered ahead of the regular
@@ -759,9 +753,13 @@ public class JobSchedulerService extends com.android.server.SystemService
                     } else if (uid1EarliestRegEnqueueTime > uid2EarliestRegEnqueueTime) {
                         return 1;
                     }
-                } else if (o1EJ && uid1EarliestRegEnqueueTime < o2.enqueueTime) {
+                } else if (o1EJ && uid1EarliestRegEnqueueTime <= o2.enqueueTime) {
+                    // Include = to ensure that if we sorted an EJ ahead of a regular job at time X
+                    // then we make sure to sort it ahead of all regular jobs at time X.
                     return -1;
-                } else if (o2EJ && uid2EarliestRegEnqueueTime < o1.enqueueTime) {
+                } else if (o2EJ && uid2EarliestRegEnqueueTime <= o1.enqueueTime) {
+                    // Include = to ensure that if we sorted an EJ ahead of a regular job at time X
+                    // then we make sure to sort it ahead of all regular jobs at time X.
                     return 1;
                 }
             }
@@ -1010,13 +1008,21 @@ public class JobSchedulerService extends com.android.server.SystemService
     }
 
     @Override
-    public void onUserUnlocked(@NonNull TargetUser user) {
+    public void onUserStarting(@NonNull TargetUser user) {
         synchronized (mLock) {
-            // Note that the user has started after its unlocked instead of when the user
-            // actually starts because the storage won't be decrypted until unlock.
             mStartedUsers = ArrayUtils.appendInt(mStartedUsers, user.getUserIdentifier());
         }
-        // Let's kick any outstanding jobs for this user.
+        // The user is starting but credential encrypted storage is still locked.
+        // Only direct-boot-aware jobs can safely run.
+        // Let's kick off any eligible jobs for this user.
+        mHandler.obtainMessage(MSG_CHECK_JOB).sendToTarget();
+    }
+
+    @Override
+    public void onUserUnlocked(@NonNull TargetUser user) {
+        // The user is fully unlocked and credential encrypted storage is now decrypted.
+        // Direct-boot-UNaware jobs can now safely run.
+        // Let's kick off any outstanding jobs for this user.
         mHandler.obtainMessage(MSG_CHECK_JOB).sendToTarget();
     }
 

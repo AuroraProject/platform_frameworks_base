@@ -23,18 +23,23 @@ import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
+import com.android.systemui.Dumpable;
 import com.android.systemui.R;
 import com.android.systemui.qs.customize.QSCustomizer;
+
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 
 /**
  * Wrapper view with background which contains {@link QSPanel} and {@link QuickStatusBarHeader}
  */
-public class QSContainerImpl extends FrameLayout {
+public class QSContainerImpl extends FrameLayout implements Dumpable {
 
     private final Point mSizePoint = new Point();
     private int mFancyClippingTop;
@@ -285,6 +290,16 @@ public class QSContainerImpl extends FrameLayout {
         }
     }
 
+    @Override
+    protected boolean isTransformedTouchPointInView(float x, float y,
+            View child, PointF outLocalPoint) {
+        // Prevent touches outside the clipped area from propagating to a child in that area.
+        if (mClippingEnabled && y + getTranslationY() > mFancyClippingTop) {
+            return false;
+        }
+        return super.isTransformedTouchPointInView(x, y, child, outLocalPoint);
+    }
+
     private void updateClippingPath() {
         mFancyClippingPath.reset();
         if (!mClippingEnabled) {
@@ -295,5 +310,12 @@ public class QSContainerImpl extends FrameLayout {
         mFancyClippingPath.addRoundRect(0, mFancyClippingTop, getWidth(),
                 mFancyClippingBottom, mFancyClippingRadii, Path.Direction.CW);
         invalidate();
+    }
+
+    @Override
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        pw.println(getClass().getSimpleName() + " updateClippingPath: top("
+                + mFancyClippingTop + ") bottom(" + mFancyClippingBottom  + ") mClippingEnabled("
+                + mClippingEnabled + ")");
     }
 }

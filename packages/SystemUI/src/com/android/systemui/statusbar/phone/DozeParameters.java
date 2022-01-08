@@ -231,7 +231,9 @@ public class DozeParameters implements TunerService.Tunable,
      * possible if AOD isn't even enabled or if the flag is disabled.
      */
     public boolean canControlUnlockedScreenOff() {
-        return getAlwaysOn() && mFeatureFlags.useNewLockscreenAnimations();
+        return getAlwaysOn()
+                && mFeatureFlags.useNewLockscreenAnimations()
+                && !getDisplayNeedsBlanking();
     }
 
     private boolean getBoolean(String propName, int resId) {
@@ -289,6 +291,7 @@ public class DozeParameters implements TunerService.Tunable,
 
     @Override
     public void dump(@NonNull FileDescriptor fd, @NonNull PrintWriter pw, @NonNull String[] args) {
+        pw.print("getAlwaysOn(): "); pw.println(getAlwaysOn());
         pw.print("getDisplayStateSupported(): "); pw.println(getDisplayStateSupported());
         pw.print("getPulseDuration(): "); pw.println(getPulseDuration());
         pw.print("getPulseInDuration(): "); pw.println(getPulseInDuration());

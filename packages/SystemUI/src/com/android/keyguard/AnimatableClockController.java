@@ -20,13 +20,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.graphics.Color;
-import android.hardware.biometrics.BiometricSourceType;
 import android.icu.text.NumberFormat;
+
+import androidx.annotation.VisibleForTesting;
 
 import com.android.settingslib.Utils;
 import com.android.systemui.R;
 import com.android.systemui.broadcast.BroadcastDispatcher;
+import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.statusbar.phone.KeyguardBypassController;
 import com.android.systemui.statusbar.policy.BatteryController;
@@ -68,20 +71,20 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
             BroadcastDispatcher broadcastDispatcher,
             BatteryController batteryController,
             KeyguardUpdateMonitor keyguardUpdateMonitor,
-            KeyguardBypassController bypassController) {
+            KeyguardBypassController bypassController,
+            @Main Resources resources
+    ) {
         super(view);
         mStatusBarStateController = statusBarStateController;
-        mIsDozing = mStatusBarStateController.isDozing();
-        mDozeAmount = mStatusBarStateController.getDozeAmount();
         mBroadcastDispatcher = broadcastDispatcher;
         mKeyguardUpdateMonitor = keyguardUpdateMonitor;
         mBypassController = bypassController;
         mBatteryController = batteryController;
 
         mBurmeseNumerals = mBurmeseNf.format(FORMAT_NUMBER);
-        mBurmeseLineSpacing = getContext().getResources().getFloat(
+        mBurmeseLineSpacing = resources.getFloat(
                 R.dimen.keyguard_clock_line_spacing_scale_burmese);
-        mDefaultLineSpacing = getContext().getResources().getFloat(
+        mDefaultLineSpacing = resources.getFloat(
                 R.dimen.keyguard_clock_line_spacing_scale);
     }
 
@@ -94,9 +97,7 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
         @Override
         public void onBatteryLevelChanged(int level, boolean pluggedIn, boolean charging) {
             if (mKeyguardShowing && !mIsCharging && charging) {
-                mView.animateCharge(() -> {
-                    return mStatusBarStateController.isDozing();
-                });
+                mView.animateCharge(mStatusBarStateController::isDozing);
             }
             mIsCharging = charging;
         }
@@ -109,7 +110,7 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
         }
     };
 
-    private final StatusBarStateController.StateListener mStatusBarStatePersistentListener =
+    private final StatusBarStateController.StateListener mStatusBarStateListener =
             new StatusBarStateController.StateListener() {
                 @Override
                 public void onDozeAmountChanged(float linear, float eased) {
@@ -127,39 +128,31 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
     private final KeyguardUpdateMonitorCallback mKeyguardUpdateMonitorCallback =
             new KeyguardUpdateMonitorCallback() {
         @Override
-        public void onBiometricAuthenticated(int userId, BiometricSourceType biometricSourceType,
-                boolean isStrongBiometric) {
-            // Strong auth will force the bouncer regardless of a successful face auth
-            if (biometricSourceType == BiometricSourceType.FACE
-                    && mBypassController.canBypass()
-                    && !mKeyguardUpdateMonitor.userNeedsStrongAuth()) {
-                mView.animateDisappear();
-            }
-        }
-
-        @Override
         public void onKeyguardVisibilityChanged(boolean showing) {
             mKeyguardShowing = showing;
             if (!mKeyguardShowing) {
-                // reset state (ie: after animateDisappear)
+                // reset state (ie: after weight animations)
                 reset();
             }
         }
     };
 
     @Override
+    protected void onInit() {
+        mIsDozing = mStatusBarStateController.isDozing();
+    }
+
+    @Override
     protected void onViewAttached() {
         updateLocale();
         mBroadcastDispatcher.registerReceiver(mLocaleBroadcastReceiver,
                 new IntentFilter(Intent.ACTION_LOCALE_CHANGED));
-        mIsDozing = mStatusBarStateController.isDozing();
         mDozeAmount = mStatusBarStateController.getDozeAmount();
+        mIsDozing = mStatusBarStateController.isDozing() || mDozeAmount != 0;
         mBatteryController.addCallback(mBatteryCallback);
         mKeyguardUpdateMonitor.registerCallback(mKeyguardUpdateMonitorCallback);
-        mKeyguardShowing = true;
 
-        mStatusBarStateController.removeCallback(mStatusBarStatePersistentListener);
-        mStatusBarStateController.addCallback(mStatusBarStatePersistentListener);
+        mStatusBarStateController.addCallback(mStatusBarStateListener);
 
         refreshTime();
         initColors();
@@ -171,9 +164,7 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
         mBroadcastDispatcher.unregisterReceiver(mLocaleBroadcastReceiver);
         mKeyguardUpdateMonitor.removeCallback(mKeyguardUpdateMonitorCallback);
         mBatteryController.removeCallback(mBatteryCallback);
-        if (!mView.isAttachedToWindow()) {
-            mStatusBarStateController.removeCallback(mStatusBarStatePersistentListener);
-        }
+        mStatusBarStateController.removeCallback(mStatusBarStateListener);
     }
 
     /** Animate the clock appearance */
@@ -202,6 +193,14 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
         mView.refreshFormat();
     }
 
+    /**
+     * Return locallly stored dozing state.
+     */
+    @VisibleForTesting
+    public boolean isDozing() {
+        return mIsDozing;
+    }
+
     private void updateLocale() {
         Locale currLocale = Locale.getDefault();
         if (!Objects.equals(currLocale, mLocale)) {
@@ -212,6 +211,7 @@ public class AnimatableClockController extends ViewController<AnimatableClockVie
             } else {
                 mView.setLineSpacingScale(mDefaultLineSpacing);
             }
+            mView.refreshFormat();
         }
     }
 

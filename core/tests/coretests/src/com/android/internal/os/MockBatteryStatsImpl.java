@@ -57,11 +57,10 @@ public class MockBatteryStatsImpl extends BatteryStatsImpl {
         this(new MockClocks());
     }
 
-    public void initMeasuredEnergyStats() {
+    public void initMeasuredEnergyStats(String[] customBucketNames) {
         final boolean[] supportedStandardBuckets =
                 new boolean[MeasuredEnergyStats.NUMBER_STANDARD_POWER_BUCKETS];
         Arrays.fill(supportedStandardBuckets, true);
-        final String[] customBucketNames = {"FOO", "BAR"};
         mGlobalMeasuredEnergyStats =
                 new MeasuredEnergyStats(supportedStandardBuckets, customBucketNames);
     }
@@ -171,6 +170,11 @@ public class MockBatteryStatsImpl extends BatteryStatsImpl {
 
     public MockBatteryStatsImpl setOnBatteryInternal(boolean onBatteryInternal) {
         mOnBatteryInternal = onBatteryInternal;
+        return this;
+    }
+
+    public MockBatteryStatsImpl setTrackingCpuByProcStateEnabled(boolean enabled) {
+        mConstants.TRACK_CPU_TIMES_BY_PROC_STATE = enabled;
         return this;
     }
 

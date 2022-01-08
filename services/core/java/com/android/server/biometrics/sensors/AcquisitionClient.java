@@ -22,6 +22,7 @@ import android.hardware.biometrics.BiometricConstants;
 import android.media.AudioAttributes;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
@@ -49,6 +50,8 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
             VibrationEffect.get(VibrationEffect.EFFECT_DOUBLE_CLICK);
 
     private final PowerManager mPowerManager;
+    // If haptics should occur when auth result (success/reject) is known
+    protected final boolean mShouldVibrate;
     private boolean mShouldSendErrorToClient = true;
     private boolean mAlreadyCancelled;
 
@@ -59,11 +62,12 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
 
     public AcquisitionClient(@NonNull Context context, @NonNull LazyDaemon<T> lazyDaemon,
             @NonNull IBinder token, @NonNull ClientMonitorCallbackConverter listener, int userId,
-            @NonNull String owner, int cookie, int sensorId, int statsModality,
-            int statsAction, int statsClient) {
+            @NonNull String owner, int cookie, int sensorId, boolean shouldVibrate,
+            int statsModality, int statsAction, int statsClient) {
         super(context, lazyDaemon, token, listener, userId, owner, cookie, sensorId, statsModality,
                 statsAction, statsClient);
         mPowerManager = context.getSystemService(PowerManager.class);
+        mShouldVibrate = shouldVibrate;
     }
 
     @Override
@@ -87,6 +91,8 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
      * operation still needs to wait for the HAL to send ERROR_CANCELED.
      */
     public void onUserCanceled() {
+        Slog.d(TAG, "onUserCanceled");
+
         // Send USER_CANCELED, but do not finish. Wait for the HAL to respond with ERROR_CANCELED,
         // which then finishes the AcquisitionClient's lifecycle.
         onErrorInternal(BiometricConstants.BIOMETRIC_ERROR_USER_CANCELED, 0 /* vendorCode */,
@@ -95,6 +101,8 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
     }
 
     protected void onErrorInternal(int errorCode, int vendorCode, boolean finish) {
+        Slog.d(TAG, "onErrorInternal code: " + errorCode + ", finish: " + finish);
+
         // In some cases, the framework will send an error to the caller before a true terminal
         // case (success, failure, or error) is received from the HAL (e.g. versions of fingerprint
         // that do not handle lockout under the HAL. In these cases, ensure that the framework only
@@ -133,6 +141,8 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
 
     @Override
     public void cancelWithoutStarting(@NonNull Callback callback) {
+        Slog.d(TAG, "cancelWithoutStarting: " + this);
+
         final int errorCode = BiometricConstants.BIOMETRIC_ERROR_CANCELED;
         try {
             if (getListener() != null) {
@@ -182,31 +192,25 @@ public abstract class AcquisitionClient<T> extends HalClientMonitor<T> implement
         mPowerManager.userActivity(now, PowerManager.USER_ACTIVITY_EVENT_TOUCH, 0);
     }
 
-    protected boolean successHapticsEnabled() {
-        return true;
-    }
-
-    protected boolean errorHapticsEnabled() {
-        return true;
-    }
-
     protected final void vibrateSuccess() {
-        if (!successHapticsEnabled()) {
-            return;
-        }
         Vibrator vibrator = getContext().getSystemService(Vibrator.class);
         if (vibrator != null) {
-            vibrator.vibrate(SUCCESS_VIBRATION_EFFECT, VIBRATION_SONIFICATION_ATTRIBUTES);
+            vibrator.vibrate(Process.myUid(),
+                    getContext().getOpPackageName(),
+                    SUCCESS_VIBRATION_EFFECT,
+                    getClass().getSimpleName() + "::success",
+                    VIBRATION_SONIFICATION_ATTRIBUTES);
         }
     }
 
     protected final void vibrateError() {
-        if (!errorHapticsEnabled()) {
-            return;
-        }
         Vibrator vibrator = getContext().getSystemService(Vibrator.class);
         if (vibrator != null) {
-            vibrator.vibrate(ERROR_VIBRATION_EFFECT, VIBRATION_SONIFICATION_ATTRIBUTES);
+            vibrator.vibrate(Process.myUid(),
+                    getContext().getOpPackageName(),
+                    ERROR_VIBRATION_EFFECT,
+                    getClass().getSimpleName() + "::error",
+                    VIBRATION_SONIFICATION_ATTRIBUTES);
         }
     }
 }

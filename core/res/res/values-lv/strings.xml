@@ -204,7 +204,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"GNSS pakalpojums"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"Sensoru paziņojumu pakalpojums"</string>
     <string name="twilight_service" msgid="8964898045693187224">"Krēslas noteikšanas pakalpojums"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"Laika joslas noteikšanas rīks (nav savienojuma)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"GNSS laika atjaunināšanas pakalpojums"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"Mūzikas atpazīšanas pārziņa pakalpojums"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"Jūsu ierīces dati tiks dzēsti"</string>
@@ -322,7 +321,7 @@
     <string name="permgroupdesc_activityRecognition" msgid="4725624819457670704">"piekļūt jūsu fiziskajām aktivitātēm"</string>
     <string name="permgrouplab_camera" msgid="9090413408963547706">"Kamera"</string>
     <string name="permgroupdesc_camera" msgid="7585150538459320326">"uzņemt attēlus un ierakstīt videoklipus"</string>
-    <string name="permgrouplab_nearby_devices" msgid="5529147543651181991">"Tuvējās ierīces"</string>
+    <string name="permgrouplab_nearby_devices" msgid="5529147543651181991">"Tuvumā esošas ierīces"</string>
     <string name="permgroupdesc_nearby_devices" msgid="3213561597116913508">"tuvumā esošu ierīču meklēšana un savienojuma izveide ar tām"</string>
     <string name="permgrouplab_calllog" msgid="7926834372073550288">"Zvanu žurnāli"</string>
     <string name="permgroupdesc_calllog" msgid="2026996642917801803">"lasīt un rakstīt tālruņa zvanu žurnālu"</string>
@@ -543,7 +542,7 @@
     <string name="permdesc_bluetooth_connect" product="default" msgid="4546016548795544617">"Ļauj lietotnei piekļūt pārī savienotām Bluetooth ierīcēm."</string>
     <string name="permlab_bluetooth_advertise" msgid="2781147747928853177">"reklamēšana tuvumā esošās Bluetooth ierīcēs"</string>
     <string name="permdesc_bluetooth_advertise" product="default" msgid="6085174451034210183">"Atļauj lietotnei veikt reklamēšanu tuvumā esošās Bluetooth ierīcēs"</string>
-    <string name="permlab_uwb_ranging" msgid="8141915781475770665">"novietojuma noteikšana starp tuvu esošām ultraplatjoslas ierīcēm"</string>
+    <string name="permlab_uwb_ranging" msgid="8141915781475770665">"novietojums starp tuvējām ultraplatjoslas ierīcēm"</string>
     <string name="permdesc_uwb_ranging" msgid="2519723069604307055">"Atļaut lietotnei noteikt relatīvo atrašanās vietu starp tuvumā esošām ultraplatjoslas ierīcēm"</string>
     <string name="permlab_preferredPaymentInfo" msgid="5274423844767445054">"Informācija par vēlamo NFC maksājumu pakalpojumu"</string>
     <string name="permdesc_preferredPaymentInfo" msgid="8583552469807294967">"Ļauj lietotnei iegūt informāciju par vēlamo NFC maksājumu pakalpojumu, piemēram, par reģistrētajiem lietojumprogrammu ID un maršruta galamērķi."</string>
@@ -613,6 +612,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"Izmantojiet pirksta nospiedumu vai ekrāna bloķēšanas opciju, lai turpinātu"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"Radās kļūda. Mēģiniet vēlreiz."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"Pirksta nospieduma ikona"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"Autorizācija pēc sejas"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"Problēma ar autorizāciju pēc sejas"</string>
@@ -665,6 +665,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"Izmantojiet autorizāciju pēc sejas vai ekrāna bloķēšanas opciju, lai turpinātu"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"Radās kļūda. Mēģiniet vēlreiz."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"Sejas ikona"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"lasīt sinhronizācijas iestatījumus"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"Ļauj lietotnei lasīt konta sinhronizācijas iestatījumus. Piemēram, šādi var noteikt, vai lietotne Personas ir sinhronizēta ar kontu."</string>
@@ -1503,6 +1504,7 @@
     <string name="deny" msgid="6632259981847676572">"Noraidīt"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"Atļauja ir pieprasīta."</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"Atļauja kontam <xliff:g id="ACCOUNT">%s</xliff:g>\nir pieprasīta."</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"Lietotne <xliff:g id="APP">%1$s</xliff:g> pieprasīja atļauju piekļūt \nkontam <xliff:g id="ACCOUNT">%2$s</xliff:g>."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"Šo lietotni izmantojat ārpus sava darba profila"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"Jūs izmantojat šo lietotni no sava darba profila."</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"Ievades metode"</string>

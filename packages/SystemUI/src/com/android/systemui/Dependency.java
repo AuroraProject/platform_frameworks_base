@@ -65,6 +65,7 @@ import com.android.systemui.power.EnhancedEstimates;
 import com.android.systemui.power.PowerUI;
 import com.android.systemui.privacy.PrivacyItemController;
 import com.android.systemui.qs.ReduceBrightColorsController;
+import com.android.systemui.qs.tiles.dialog.InternetDialogFactory;
 import com.android.systemui.recents.OverviewProxyService;
 import com.android.systemui.recents.Recents;
 import com.android.systemui.screenrecord.RecordingController;
@@ -73,6 +74,7 @@ import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.DevicePolicyManagerWrapper;
 import com.android.systemui.shared.system.PackageManagerWrapper;
 import com.android.systemui.statusbar.CommandQueue;
+import com.android.systemui.statusbar.FeatureFlags;
 import com.android.systemui.statusbar.NotificationListener;
 import com.android.systemui.statusbar.NotificationLockscreenUserManager;
 import com.android.systemui.statusbar.NotificationMediaManager;
@@ -99,6 +101,7 @@ import com.android.systemui.statusbar.phone.ManagedProfileController;
 import com.android.systemui.statusbar.phone.NotificationGroupAlertTransferHelper;
 import com.android.systemui.statusbar.phone.ShadeController;
 import com.android.systemui.statusbar.phone.StatusBar;
+import com.android.systemui.statusbar.phone.StatusBarContentInsetsProvider;
 import com.android.systemui.statusbar.phone.StatusBarIconController;
 import com.android.systemui.statusbar.phone.StatusBarWindowController;
 import com.android.systemui.statusbar.policy.AccessibilityController;
@@ -358,8 +361,11 @@ public class Dependency {
     @Inject Lazy<TelephonyListenerManager> mTelephonyListenerManager;
     @Inject Lazy<SystemStatusAnimationScheduler> mSystemStatusAnimationSchedulerLazy;
     @Inject Lazy<PrivacyDotViewController> mPrivacyDotViewControllerLazy;
-    @Inject Lazy<EdgeBackGestureHandler> mEdgeBackGestureHandler;
+    @Inject Lazy<EdgeBackGestureHandler.Factory> mEdgeBackGestureHandlerFactoryLazy;
     @Inject Lazy<UiEventLogger> mUiEventLogger;
+    @Inject Lazy<FeatureFlags> mFeatureFlagsLazy;
+    @Inject Lazy<StatusBarContentInsetsProvider> mContentInsetsProviderLazy;
+    @Inject Lazy<InternetDialogFactory> mInternetDialogFactory;
 
     @Inject
     public Dependency() {
@@ -572,8 +578,12 @@ public class Dependency {
         mProviders.put(SystemStatusAnimationScheduler.class,
                 mSystemStatusAnimationSchedulerLazy::get);
         mProviders.put(PrivacyDotViewController.class, mPrivacyDotViewControllerLazy::get);
-        mProviders.put(EdgeBackGestureHandler.class, mEdgeBackGestureHandler::get);
+        mProviders.put(EdgeBackGestureHandler.Factory.class,
+                mEdgeBackGestureHandlerFactoryLazy::get);
+        mProviders.put(InternetDialogFactory.class, mInternetDialogFactory::get);
         mProviders.put(UiEventLogger.class, mUiEventLogger::get);
+        mProviders.put(FeatureFlags.class, mFeatureFlagsLazy::get);
+        mProviders.put(StatusBarContentInsetsProvider.class, mContentInsetsProviderLazy::get);
 
         Dependency.setInstance(this);
     }

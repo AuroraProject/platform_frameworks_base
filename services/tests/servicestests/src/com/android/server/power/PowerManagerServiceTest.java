@@ -215,7 +215,7 @@ public class PowerManagerServiceTest {
             @Override
             Notifier createNotifier(Looper looper, Context context, IBatteryStats batteryStats,
                     SuspendBlocker suspendBlocker, WindowManagerPolicy policy,
-                    FaceDownDetector faceDownDetector) {
+                    FaceDownDetector faceDownDetector, ScreenUndimDetector screenUndimDetector) {
                 return mNotifierMock;
             }
 
@@ -757,6 +757,25 @@ public class PowerManagerServiceTest {
         when(mInattentiveSleepWarningControllerMock.isShown()).thenReturn(true);
 
         setPluggedIn(true);
+        verify(mInattentiveSleepWarningControllerMock, atLeastOnce()).dismiss(true);
+    }
+
+    @Test
+    public void testInattentiveSleep_hideWarningIfInattentiveSleepIsDisabled() throws Exception {
+        setMinimumScreenOffTimeoutConfig(5);
+        setAttentiveWarningDuration(120);
+        setAttentiveTimeout(100);
+
+        createService();
+        startSystem();
+
+        verify(mInattentiveSleepWarningControllerMock, times(1)).show();
+        verify(mInattentiveSleepWarningControllerMock, never()).dismiss(anyBoolean());
+        when(mInattentiveSleepWarningControllerMock.isShown()).thenReturn(true);
+
+        setAttentiveTimeout(-1);
+        mService.handleSettingsChangedLocked();
+
         verify(mInattentiveSleepWarningControllerMock, atLeastOnce()).dismiss(true);
     }
 

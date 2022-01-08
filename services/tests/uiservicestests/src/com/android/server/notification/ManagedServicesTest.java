@@ -65,6 +65,7 @@ import com.google.android.collect.Lists;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -275,6 +276,36 @@ public class ManagedServicesTest extends UiServiceTestCase {
             service.migrateToXml();
 
             verifyExpectedApprovedEntries(service);
+        }
+    }
+
+    @Test
+    public void testReadXml_noLongerMigrateFromSettings() throws Exception {
+        for (int approvalLevel : new int[] {APPROVAL_BY_COMPONENT, APPROVAL_BY_PACKAGE}) {
+            ManagedServices service = new TestManagedServicesNoSettings(getContext(), mLock,
+                    mUserProfiles, mIpm, approvalLevel);
+
+            // approved services aren't in xml
+            TypedXmlPullParser parser = Xml.newFastPullParser();
+            parser.setInput(new BufferedInputStream(new ByteArrayInputStream(new byte[]{})),
+                    null);
+            writeExpectedValuesToSettings(approvalLevel);
+
+            service.migrateToXml();
+            // No crash? success
+
+            ArrayMap<Integer, String> verifyMap = approvalLevel == APPROVAL_BY_COMPONENT
+                    ? mExpectedPrimary.get(service.mApprovalLevel)
+                    : mExpectedSecondary.get(service.mApprovalLevel);
+            for (int userId : verifyMap.keySet()) {
+                for (String verifyValue : verifyMap.get(userId).split(":")) {
+                    if (!TextUtils.isEmpty(verifyValue)) {
+                        assertFalse("service type " + service.mApprovalLevel + ":"
+                                        + verifyValue + " is allowed for user " + userId,
+                                service.isPackageOrComponentAllowed(verifyValue, userId));
+                    }
+                }
+            }
         }
     }
 
@@ -1290,16 +1321,15 @@ public class ManagedServicesTest extends UiServiceTestCase {
                 APPROVAL_BY_COMPONENT);
         ComponentName cn = ComponentName.unflattenFromString("a/a");
 
-        service.registerSystemService(cn, 0);
-        when(context.bindServiceAsUser(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            ServiceConnection sc = (ServiceConnection) args[1];
-            sc.onNullBinding(cn);
-            return true;
-        });
+        ArgumentCaptor<ServiceConnection> captor = ArgumentCaptor.forClass(ServiceConnection.class);
+        when(context.bindServiceAsUser(any(), captor.capture(), anyInt(), any()))
+                .thenAnswer(invocation -> {
+                    captor.getValue().onNullBinding(cn);
+                    return true;
+                });
 
         service.registerSystemService(cn, 0);
-        assertFalse(service.isBound(cn, 0));
+        verify(context).unbindService(captor.getValue());
     }
 
     @Test
@@ -1764,6 +1794,27 @@ public class ManagedServicesTest extends UiServiceTestCase {
         @Override
         public boolean shouldReflectToSettings() {
             return true;
+        }
+    }
+
+    class TestManagedServicesNoSettings extends TestManagedServices {
+
+        public TestManagedServicesNoSettings(Context context, Object mutex, UserProfiles userProfiles,
+                IPackageManager pm, int approvedServiceType) {
+            super(context, mutex, userProfiles, pm, approvedServiceType);
+        }
+
+        @Override
+        protected Config getConfig() {
+            Config c = super.getConfig();
+            c.secureSettingName = null;
+            c.secondarySettingName = null;
+            return c;
+        }
+
+        @Override
+        public boolean shouldReflectToSettings() {
+            return false;
         }
     }
 }

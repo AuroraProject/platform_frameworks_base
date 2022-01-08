@@ -2228,6 +2228,20 @@ interface ITelephony {
     List<String> getEquivalentHomePlmns(int subId, String callingPackage, String callingFeatureId);
 
     /**
+     * Enable or disable Voice over NR (VoNR)
+     * @param subId the subscription ID that this action applies to.
+     * @param enabled enable or disable VoNR.
+     * @return operation result.
+     */
+    int setVoNrEnabled(int subId, boolean enabled);
+
+    /**
+     * Is voice over NR enabled
+     * @return true if VoNR is enabled else false
+     */
+    boolean isVoNrEnabled(int subId);
+
+    /**
      * Enable/Disable E-UTRA-NR Dual Connectivity
      * @return operation result. See TelephonyManager.EnableNrDualConnectivityResult for
      * details
@@ -2387,6 +2401,11 @@ interface ITelephony {
      * Get the EAB contact from the EAB database.
      */
     String getContactFromEab(String contact);
+
+    /**
+     * Get the EAB capability from the EAB database.
+     */
+    String getCapabilityFromEab(String contact);
 
     /*
      * Check whether the device supports RCS User Capability Exchange or not.

@@ -204,7 +204,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"GNSS usluga"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"Usluga obaveštenja senzora"</string>
     <string name="twilight_service" msgid="8964898045693187224">"Usluga Sumrak"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"Detektor vremenske zone (nema internet veze)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"GNSS usluga za ažuriranje vremena"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"Usluga Menadžer prepoznavanja muzike"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"Uređaj će biti obrisan"</string>
@@ -613,6 +612,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"Koristite otisak prsta ili zaključavanje ekrana da biste nastavili"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"Došlo je do problema. Probajte ponovo."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"Ikona otiska prsta"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"Otključavanje licem"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"Problem sa otključavanje licem"</string>
@@ -665,6 +665,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"Koristite lice ili zaključavanje ekrana da biste nastavili"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"Došlo je do problema. Probajte ponovo."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"Ikona lica"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"čitanje podešavanja sinhronizacije"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"Dozvoljava aplikaciji da čita podešavanja sinhronizacije za nalog. Na primer, ovako može da se utvrdi da li je aplikacija Ljudi sinhronizovana sa nalogom."</string>
@@ -1503,6 +1504,7 @@
     <string name="deny" msgid="6632259981847676572">"Odbij"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"Zatražena je dozvola"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"Zatražena je dozvola\nza nalog <xliff:g id="ACCOUNT">%s</xliff:g>"</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"<xliff:g id="APP">%1$s</xliff:g> traži dozvolu \nza nalog <xliff:g id="ACCOUNT">%2$s</xliff:g>."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"Koristite ovu aplikaciju izvan poslovnog profila"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"Koristite ovu aplikaciju na poslovnom profilu"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"Metod unosa"</string>
