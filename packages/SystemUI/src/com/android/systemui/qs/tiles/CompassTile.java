@@ -27,7 +27,7 @@ import android.widget.ImageView;
 
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
-import com.android.internal.util.proton.ProtonUtils;
+import com.android.internal.util.aurora.AuroraUtils;
 import com.android.systemui.R;
 import com.android.systemui.plugins.qs.QSIconView;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
@@ -199,7 +199,7 @@ public class CompassTile extends QSTileImpl<BooleanState> implements SensorEvent
 
     @Override
     public boolean isAvailable() {
-        return ProtonUtils.deviceHasCompass(mContext);
+        return AuroraUtils.deviceHasCompass(mContext);
     }
 
     @Override

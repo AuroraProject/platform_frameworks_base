@@ -80,7 +80,7 @@ import com.android.systemui.wallet.dagger.WalletModule;
 import com.android.systemui.wmshell.BubblesManager;
 import com.android.wm.shell.bubbles.Bubbles;
 
-import org.protonaosp.systemui.PixelUdfpsHbmProvider;
+import org.auroraaosp.systemui.PixelUdfpsHbmProvider;
 
 import java.util.Optional;
 import java.util.concurrent.Executor;

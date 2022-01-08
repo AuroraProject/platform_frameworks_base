@@ -43,7 +43,7 @@ import com.android.systemui.util.leak.GarbageMonitor;
 import com.android.systemui.volume.VolumeUI;
 import com.android.systemui.wmshell.WMShell;
 
-import org.protonaosp.systemui.theme.CustomThemeOverlayController;
+import org.auroraaosp.systemui.theme.CustomThemeOverlayController;
 
 import dagger.Binds;
 import dagger.Module;

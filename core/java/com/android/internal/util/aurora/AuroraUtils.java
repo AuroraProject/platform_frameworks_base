@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.internal.util.proton;
+package com.android.internal.util.aurora;
 
 import android.content.Context;
 import android.content.Intent;
@@ -39,7 +39,7 @@ import com.android.internal.statusbar.IStatusBarService;
 /**
  * Some custom utilities
  */
-public class ProtonUtils {
+public class AuroraUtils {
 
     public static final String INTENT_SCREENSHOT = "action_take_screenshot";
     public static final String INTENT_REGION_SCREENSHOT = "action_take_region_screenshot";

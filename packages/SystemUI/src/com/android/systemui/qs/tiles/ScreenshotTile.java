@@ -28,7 +28,7 @@ import androidx.annotation.Nullable;
 
 import com.android.internal.logging.MetricsLogger;
 
-import com.android.internal.util.proton.ProtonUtils;
+import com.android.internal.util.aurora.AuroraUtils;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
@@ -91,7 +91,7 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
         try {
              Thread.sleep(1000); //1s
         } catch (InterruptedException ie) {}
-        ProtonUtils.takeScreenshot(mRegion ? false : true);
+        AuroraUtils.takeScreenshot(mRegion ? false : true);
     }
 
     @Override

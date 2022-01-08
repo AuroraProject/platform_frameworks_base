@@ -56,7 +56,7 @@ import android.view.Window;
 import android.view.WindowManagerGlobal;
 
 import com.android.internal.content.ReferrerIntent;
-import com.android.internal.util.proton.PixelPropsUtils;
+import com.android.internal.util.aurora.PixelPropsUtils;
 
 import java.io.File;
 import java.lang.annotation.Retention;

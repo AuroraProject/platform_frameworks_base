@@ -20,7 +20,7 @@ import android.content.res.AssetManager
 import android.content.res.Resources
 import com.android.systemui.SystemUIFactory
 import com.android.systemui.theme.ThemeOverlayController
-import org.protonaosp.systemui.theme.CustomThemeOverlayController
+import org.auroraaosp.systemui.theme.CustomThemeOverlayController
 
 class CustomSystemUIFactory : SystemUIFactory() {
     // ML back gesture provider
