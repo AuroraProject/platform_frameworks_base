@@ -22,10 +22,8 @@ import com.android.systemui.power.PowerUI;
 import dagger.Binds;
 import dagger.Module;
 
-import com.google.android.systemui.power.PowerNotificationWarningsGoogleImpl;
-
 @Module
 public interface PowerModuleGoogle {
     @Binds
-    PowerUI.WarningsUI provideWarningsUi(PowerNotificationWarningsGoogleImpl controllerImpl);
+    PowerUI.WarningsUI provideWarningsUi(PowerNotificationWarnings controllerImpl);
 }
