@@ -48,6 +48,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import static java.util.Collections.singletonList;
+
 import android.net.ConnectivityManager;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -233,6 +235,8 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
         verify(mNetworkAgent).sendLinkProperties(
                 argThat(lp -> expectedMtu == lp.getMtu()
                         && TEST_TCP_BUFFER_SIZES_2.equals(lp.getTcpBufferSizes())));
+        verify(mNetworkAgent)
+                .setUnderlyingNetworks(eq(singletonList(TEST_UNDERLYING_NETWORK_RECORD_2.network)));
     }
 
     private void triggerChildOpened() {
@@ -293,6 +297,8 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
                         any(),
                         any());
         verify(mNetworkAgent).register();
+        verify(mNetworkAgent)
+                .setUnderlyingNetworks(eq(singletonList(TEST_UNDERLYING_NETWORK_RECORD_1.network)));
         verify(mNetworkAgent).markConnected();
 
         verify(mIpSecSvc)
@@ -316,6 +322,7 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
         triggerValidation(NetworkAgent.VALIDATION_STATUS_VALID);
         verify(mSafeModeTimeoutAlarm).cancel();
         assertFalse(mGatewayConnection.isInSafeMode());
+        verifySafeModeStateAndCallbackFired(1 /* invocationCount */, false /* isInSafeMode */);
     }
 
     @Test
@@ -385,6 +392,7 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
 
         triggerValidation(NetworkAgent.VALIDATION_STATUS_VALID);
 
+        verifySafeModeStateAndCallbackFired(2 /* invocationCount */, false /* isInSafeMode */);
         assertFalse(mGatewayConnection.isInSafeMode());
     }
 
@@ -394,7 +402,7 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
         mTestLooper.dispatchAll();
 
         triggerValidation(NetworkAgent.VALIDATION_STATUS_VALID);
-        assertFalse(mGatewayConnection.isInSafeMode());
+        verifySafeModeStateAndCallbackFired(1 /* invocationCount */, false /* isInSafeMode */);
 
         // Trigger a failed validation, and the subsequent safemode timeout.
         triggerValidation(NetworkAgent.VALIDATION_STATUS_NOT_VALID);
@@ -410,7 +418,7 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
         runnableCaptor.getValue().run();
         mTestLooper.dispatchAll();
 
-        assertTrue(mGatewayConnection.isInSafeMode());
+        verifySafeModeStateAndCallbackFired(2 /* invocationCount */, true /* isInSafeMode */);
     }
 
     private Consumer<VcnNetworkAgent> setupNetworkAndGetUnwantedCallback() {
@@ -570,6 +578,10 @@ public class VcnGatewayConnectionConnectedStateTest extends VcnGatewayConnection
     @Test
     public void testTeardown() throws Exception {
         mGatewayConnection.teardownAsynchronously();
+        mTestLooper.dispatchAll();
+
+        // Verify that sending a non-quitting disconnect request does not unset the isQuitting flag
+        mGatewayConnection.sendDisconnectRequestedAndAcquireWakelock("TEST", false);
         mTestLooper.dispatchAll();
 
         assertEquals(mGatewayConnection.mDisconnectingState, mGatewayConnection.getCurrentState());

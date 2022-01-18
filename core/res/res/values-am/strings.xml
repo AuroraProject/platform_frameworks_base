@@ -202,7 +202,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"GNSS አገልግሎት"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"የዳሳሽ ማሳወቂያ አገልግሎት"</string>
     <string name="twilight_service" msgid="8964898045693187224">"የውጋገን አገልግሎት"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"የሰዓት ሰቅ አንባቢ (ግንኙነት የለም)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"የGNSS ጊዜ ዝመኔ አገልግሎት"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"የሙዚቃ ለይቶ ማወቅ አስተዳዳሪ አገልግሎት"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"የእርስዎ መሣሪያ ይደመሰሳል"</string>
@@ -610,6 +609,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"ለመቀጠል የጣት አሻራዎን ወይም የማያ ገጽ ቁልፍዎን ይጠቀሙ"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።"</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"የጣት አሻራ አዶ"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"በመልክ መክፈት"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"ከመልክ መክፈት ጋር በተያያዘ ችግር"</string>
@@ -662,6 +662,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"ለመቀጠል መልክዎን ወይም የማያ ገጽዎን መቆለፊያ ይጠቀሙ"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።"</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"የፊት አዶ"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"የሥምሪያ ቅንብሮች አንብብ"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"መተግበሪያው የአንድ መለያ የማመሳሰል ቅንብሮችን እንዲያነብ ይፈቅድለታል። ለምሳሌ ይህ የሰዎች መተግበሪያ ከመለያ ጋር መመሳሰሉን አለመመሳሰሉን ሊወስን ይችላል።"</string>
@@ -1483,6 +1484,7 @@
     <string name="deny" msgid="6632259981847676572">"ያስተባብሉ"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"ፈቃድ ተጠይቋል"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">\n" ለ<xliff:g id="ACCOUNT">%s</xliff:g> መለያ ፈቃድ ተጠይቋል"</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"ለመለያ <xliff:g id="ACCOUNT">%2$s</xliff:g>\nበ<xliff:g id="APP">%1$s</xliff:g> የተጠየቀ ፈቃድ።"</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"ከስራ መገለጫዎ ውጪ ሆነው መተግበሪያ እየተጠቀሙ ነው"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"ይህን መተግበሪያ በእርስዎ የስራ መገለጫ ላይ እየተጠቀሙበት ነው"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"ግቤት ስልት"</string>

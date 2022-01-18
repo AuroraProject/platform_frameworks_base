@@ -22,7 +22,6 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import android.app.WallpaperManager;
 import android.content.res.Resources;
 import android.text.TextUtils;
-import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
@@ -32,6 +31,7 @@ import com.android.keyguard.clock.ClockManager;
 import com.android.systemui.R;
 import com.android.systemui.broadcast.BroadcastDispatcher;
 import com.android.systemui.colorextraction.SysuiColorExtractor;
+import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.keyguard.KeyguardUnlockAnimationController;
 import com.android.systemui.plugins.ClockPlugin;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
@@ -67,17 +67,21 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
     private final BroadcastDispatcher mBroadcastDispatcher;
     private final BatteryController mBatteryController;
     private final LockscreenSmartspaceController mSmartspaceController;
+    private final Resources mResources;
 
     /**
      * Clock for both small and large sizes
      */
     private AnimatableClockController mClockViewController;
-    private FrameLayout mClockFrame;
+    private FrameLayout mClockFrame; // top aligned clock
     private AnimatableClockController mLargeClockViewController;
-    private FrameLayout mLargeClockFrame;
+    private FrameLayout mLargeClockFrame; // centered clock
 
     private final KeyguardUpdateMonitor mKeyguardUpdateMonitor;
     private final KeyguardBypassController mBypassController;
+
+    private int mLargeClockTopMargin = 0;
+    private int mKeyguardClockTopMargin = 0;
 
     /**
      * Listener for changes to the color palette.
@@ -99,6 +103,8 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
     private final KeyguardUnlockAnimationController mKeyguardUnlockAnimationController;
     private SmartspaceTransitionController mSmartspaceTransitionController;
 
+    private boolean mOnlyClock = false;
+
     @Inject
     public KeyguardClockSwitchController(
             KeyguardClockSwitch keyguardClockSwitch,
@@ -113,7 +119,8 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
             KeyguardBypassController bypassController,
             LockscreenSmartspaceController smartspaceController,
             KeyguardUnlockAnimationController keyguardUnlockAnimationController,
-            SmartspaceTransitionController smartspaceTransitionController) {
+            SmartspaceTransitionController smartspaceTransitionController,
+            @Main Resources resources) {
         super(keyguardClockSwitch);
         mStatusBarStateController = statusBarStateController;
         mColorExtractor = colorExtractor;
@@ -125,9 +132,17 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
         mKeyguardUpdateMonitor = keyguardUpdateMonitor;
         mBypassController = bypassController;
         mSmartspaceController = smartspaceController;
+        mResources = resources;
 
         mKeyguardUnlockAnimationController = keyguardUnlockAnimationController;
         mSmartspaceTransitionController = smartspaceTransitionController;
+    }
+
+    /**
+     * Mostly used for alternate displays, limit the information shown
+     */
+    public void setOnlyClock(boolean onlyClock) {
+        mOnlyClock = onlyClock;
     }
 
     /**
@@ -147,7 +162,8 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
                         mBroadcastDispatcher,
                         mBatteryController,
                         mKeyguardUpdateMonitor,
-                        mBypassController);
+                        mBypassController,
+                        mResources);
         mClockViewController.init();
 
         mLargeClockViewController =
@@ -157,7 +173,8 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
                         mBroadcastDispatcher,
                         mBatteryController,
                         mKeyguardUpdateMonitor,
-                        mBypassController);
+                        mBypassController,
+                        mResources);
         mLargeClockViewController.init();
     }
 
@@ -168,6 +185,18 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
         }
         mColorExtractor.addOnColorsChangedListener(mColorsListener);
         mView.updateColors(getGradientColors());
+        mKeyguardClockTopMargin =
+                mView.getResources().getDimensionPixelSize(R.dimen.keyguard_clock_top_margin);
+
+        if (mOnlyClock) {
+            View ksa = mView.findViewById(R.id.keyguard_status_area);
+            ksa.setVisibility(View.GONE);
+
+            View nic = mView.findViewById(
+                    R.id.left_aligned_notification_icon_container);
+            nic.setVisibility(View.GONE);
+            return;
+        }
         updateAodIcons();
 
         if (mSmartspaceController.isEnabled()) {
@@ -232,6 +261,8 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
      */
     public void onDensityOrFontScaleChanged() {
         mView.onDensityOrFontScaleChanged();
+        mKeyguardClockTopMargin =
+                mView.getResources().getDimensionPixelSize(R.dimen.keyguard_clock_top_margin);
 
         updateClockLayout();
     }
@@ -240,9 +271,12 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
         if (mSmartspaceController.isEnabled()) {
             RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(MATCH_PARENT,
                     MATCH_PARENT);
-            lp.topMargin = getContext().getResources().getDimensionPixelSize(
+            mLargeClockTopMargin = getContext().getResources().getDimensionPixelSize(
                     R.dimen.keyguard_large_clock_top_margin);
+            lp.topMargin = mLargeClockTopMargin;
             mLargeClockFrame.setLayoutParams(lp);
+        } else {
+            mLargeClockTopMargin = 0;
         }
     }
 
@@ -352,6 +386,28 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
         }
     }
 
+    /**
+     * Get y-bottom position of the currently visible clock on the keyguard.
+     * We can't directly getBottom() because clock changes positions in AOD for burn-in
+     */
+    int getClockBottom(int statusBarHeaderHeight) {
+        if (mLargeClockFrame.getVisibility() == View.VISIBLE) {
+            View clock = mLargeClockFrame.findViewById(
+                    com.android.systemui.R.id.animatable_clock_view_large);
+            int frameHeight = mLargeClockFrame.getHeight();
+            int clockHeight = clock.getHeight();
+            return frameHeight / 2 + clockHeight / 2;
+        } else {
+            return mClockFrame.findViewById(
+                    com.android.systemui.R.id.animatable_clock_view).getHeight()
+                    + statusBarHeaderHeight + mKeyguardClockTopMargin;
+        }
+    }
+
+    boolean isClockTopAligned() {
+        return mLargeClockFrame.getVisibility() != View.VISIBLE;
+    }
+
     private void updateAodIcons() {
         NotificationIconContainer nic = (NotificationIconContainer)
                 mView.findViewById(
@@ -365,37 +421,6 @@ public class KeyguardClockSwitchController extends ViewController<KeyguardClockS
 
     private ColorExtractor.GradientColors getGradientColors() {
         return mColorExtractor.getColors(WallpaperManager.FLAG_LOCK);
-    }
-
-    // DateFormat.getBestDateTimePattern is extremely expensive, and refresh is called often.
-    // This is an optimization to ensure we only recompute the patterns when the inputs change.
-    private static final class Patterns {
-        static String sClockView12;
-        static String sClockView24;
-        static String sCacheKey;
-
-        static void update(Resources res) {
-            final Locale locale = Locale.getDefault();
-            final String clockView12Skel = res.getString(R.string.clock_12hr_format);
-            final String clockView24Skel = res.getString(R.string.clock_24hr_format);
-            final String key = locale.toString() + clockView12Skel + clockView24Skel;
-            if (key.equals(sCacheKey)) return;
-
-            sClockView12 = DateFormat.getBestDateTimePattern(locale, clockView12Skel);
-            // CLDR insists on adding an AM/PM indicator even though it wasn't in the skeleton
-            // format.  The following code removes the AM/PM indicator if we didn't want it.
-            if (!clockView12Skel.contains("a")) {
-                sClockView12 = sClockView12.replaceAll("a", "").trim();
-            }
-
-            sClockView24 = DateFormat.getBestDateTimePattern(locale, clockView24Skel);
-
-            // Use fancy colon.
-            sClockView24 = sClockView24.replace(':', '\uee01');
-            sClockView12 = sClockView12.replace(':', '\uee01');
-
-            sCacheKey = key;
-        }
     }
 
     private int getCurrentLayoutDirection() {

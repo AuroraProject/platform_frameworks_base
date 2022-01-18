@@ -19,6 +19,7 @@ package com.android.keyguard;
 import static android.telephony.SubscriptionManager.DATA_ROAMING_DISABLE;
 import static android.telephony.SubscriptionManager.NAME_SOURCE_CARRIER_ID;
 
+import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.SOME_AUTH_REQUIRED_AFTER_USER_REQUEST;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_BOOT;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -513,7 +514,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
     public void testTriesToAuthenticate_whenBouncer() {
         setKeyguardBouncerVisibility(true);
 
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
         verify(mFaceManager).isHardwareDetected();
         verify(mFaceManager).hasEnrolledTemplates(anyInt());
     }
@@ -523,7 +524,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.dispatchStartedWakingUp();
         mTestableLooper.processAllMessages();
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -533,7 +534,8 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mTestableLooper.processAllMessages();
 
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -545,7 +547,8 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.dispatchStartedWakingUp();
         mTestableLooper.processAllMessages();
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -568,13 +571,14 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.dispatchStartedWakingUp();
         mTestableLooper.processAllMessages();
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
 
         // Stop scanning when bouncer becomes visible
         setKeyguardBouncerVisibility(true);
         clearInvocations(mFaceManager);
         mKeyguardUpdateMonitor.requestFaceAuth(true);
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -582,7 +586,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.setKeyguardOccluded(true);
         mKeyguardUpdateMonitor.setAssistantVisible(true);
 
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -594,7 +598,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.onTrustChanged(true /* enabled */,
                 KeyguardUpdateMonitor.getCurrentUser(), 0 /* flags */);
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -604,7 +608,8 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.onTrustChanged(true /* enabled */,
                 KeyguardUpdateMonitor.getCurrentUser(), 0 /* flags */);
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -615,7 +620,8 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
                 KeyguardUpdateMonitor.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_USER_LOCKDOWN);
 
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -626,7 +632,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
                 KeyguardUpdateMonitor.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_LOCKOUT);
 
         mKeyguardUpdateMonitor.onKeyguardVisibilityChanged(true);
-        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt());
+        verify(mFaceManager).authenticate(any(), any(), any(), any(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -638,7 +644,8 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mKeyguardUpdateMonitor.sendKeyguardBouncerChanged(true);
         mTestableLooper.processAllMessages();
 
-        verify(mFaceManager, never()).authenticate(any(), any(), any(), any());
+        verify(mFaceManager, never()).authenticate(any(), any(), any(), any(), anyInt(),
+                anyBoolean());
     }
 
     @Test
@@ -751,6 +758,28 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
                 .getFilteredSubscriptionInfo(false);
         assertThat(listToVerify.size()).isEqualTo(1);
         assertThat(listToVerify.get(0)).isEqualTo(TEST_SUBSCRIPTION_2);
+    }
+
+    @Test
+    public void testActiveSubscriptionBecomesInactive() {
+        List<SubscriptionInfo> list = new ArrayList<>();
+        list.add(TEST_SUBSCRIPTION);
+        when(mSubscriptionManager.getCompleteActiveSubscriptionInfoList()).thenReturn(list);
+        mKeyguardUpdateMonitor.mPhoneStateListener.onActiveDataSubscriptionIdChanged(
+                TEST_SUBSCRIPTION.getSubscriptionId());
+        mTestableLooper.processAllMessages();
+        assertThat(mKeyguardUpdateMonitor.mSimDatas.get(TEST_SUBSCRIPTION.getSubscriptionId()))
+                .isNotNull();
+
+        when(mSubscriptionManager.getCompleteActiveSubscriptionInfoList()).thenReturn(null);
+        mKeyguardUpdateMonitor.mPhoneStateListener.onActiveDataSubscriptionIdChanged(
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+        mTestableLooper.processAllMessages();
+
+        assertThat(mKeyguardUpdateMonitor.mSimDatas.get(TEST_SUBSCRIPTION.getSubscriptionId()))
+                .isNull();
+        assertThat(mKeyguardUpdateMonitor.mSimDatas.get(
+                SubscriptionManager.INVALID_SUBSCRIPTION_ID)).isNull();
     }
 
     @Test
@@ -900,6 +929,19 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
 
         // THEN we shouldn't listen for udfps
         assertThat(mKeyguardUpdateMonitor.shouldListenForFingerprint(true)).isEqualTo(false);
+    }
+
+    @Test
+    public void testStartUdfpsServiceStrongAuthRequiredAfterTimeout() {
+        // GIVEN status bar state is on the keyguard
+        mStatusBarStateListener.onStateChanged(StatusBarState.KEYGUARD);
+
+        // WHEN user loses smart unlock trust
+        when(mStrongAuthTracker.getStrongAuthForUser(KeyguardUpdateMonitor.getCurrentUser()))
+                .thenReturn(SOME_AUTH_REQUIRED_AFTER_USER_REQUEST);
+
+        // THEN we should still listen for udfps
+        assertThat(mKeyguardUpdateMonitor.shouldListenForFingerprint(true)).isEqualTo(true);
     }
 
     @Test

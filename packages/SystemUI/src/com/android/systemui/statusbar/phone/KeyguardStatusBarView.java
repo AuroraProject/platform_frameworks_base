@@ -50,6 +50,7 @@ import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.animation.Interpolators;
 import com.android.systemui.plugins.DarkIconDispatcher.DarkReceiver;
+import com.android.systemui.statusbar.FeatureFlags;
 import com.android.systemui.statusbar.events.SystemStatusAnimationCallback;
 import com.android.systemui.statusbar.events.SystemStatusAnimationScheduler;
 import com.android.systemui.statusbar.phone.StatusBarIconController.TintedIconManager;
@@ -95,7 +96,8 @@ public class KeyguardStatusBarView extends RelativeLayout implements
     private final UserManager mUserManager;
 
     private int mSystemIconsSwitcherHiddenExpandedMargin;
-    private int mSystemIconsBaseMargin;
+    private int mStatusBarPaddingEnd;
+    private int mMinDotWidth;
     private View mSystemIconsContainer;
     private TintedIconManager mIconManager;
     private List<String> mBlockedIcons = new ArrayList<>();
@@ -105,6 +107,7 @@ public class KeyguardStatusBarView extends RelativeLayout implements
     private int mLayoutState = LAYOUT_NONE;
 
     private SystemStatusAnimationScheduler mAnimationScheduler;
+    private FeatureFlags mFeatureFlags;
 
     /**
      * Draw this many pixels into the left/right side of the cutout to optimally use the space
@@ -142,6 +145,7 @@ public class KeyguardStatusBarView extends RelativeLayout implements
         loadBlockList();
         mBatteryController = Dependency.get(BatteryController.class);
         mAnimationScheduler = Dependency.get(SystemStatusAnimationScheduler.class);
+        mFeatureFlags = Dependency.get(FeatureFlags.class);
     }
 
     @Override
@@ -154,14 +158,7 @@ public class KeyguardStatusBarView extends RelativeLayout implements
         mMultiUserAvatar.setLayoutParams(lp);
 
         // System icons
-        lp = (MarginLayoutParams) mSystemIconsContainer.getLayoutParams();
-        lp.setMarginStart(getResources().getDimensionPixelSize(
-                R.dimen.system_icons_super_container_margin_start));
-        mSystemIconsContainer.setLayoutParams(lp);
-        mSystemIconsContainer.setPaddingRelative(mSystemIconsContainer.getPaddingStart(),
-                mSystemIconsContainer.getPaddingTop(),
-                getResources().getDimensionPixelSize(R.dimen.system_icons_keyguard_padding_end),
-                mSystemIconsContainer.getPaddingBottom());
+        updateSystemIconsLayoutParams();
 
         // Respect font size setting.
         mCarrierLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX,
@@ -191,8 +188,10 @@ public class KeyguardStatusBarView extends RelativeLayout implements
         Resources res = getResources();
         mSystemIconsSwitcherHiddenExpandedMargin = res.getDimensionPixelSize(
                 R.dimen.system_icons_switcher_hidden_expanded_margin);
-        mSystemIconsBaseMargin = res.getDimensionPixelSize(
-                R.dimen.system_icons_super_container_avatarless_margin_end);
+        mStatusBarPaddingEnd = res.getDimensionPixelSize(
+                R.dimen.status_bar_padding_end);
+        mMinDotWidth = res.getDimensionPixelSize(
+                R.dimen.ongoing_appops_dot_min_padding);
         mCutoutSideNudge = getResources().getDimensionPixelSize(
                 R.dimen.display_cutout_margin_consumption);
         mShowPercentAvailable = getContext().getResources().getBoolean(
@@ -240,16 +239,24 @@ public class KeyguardStatusBarView extends RelativeLayout implements
     private void updateSystemIconsLayoutParams() {
         LinearLayout.LayoutParams lp =
                 (LinearLayout.LayoutParams) mSystemIconsContainer.getLayoutParams();
-        // If the avatar icon is gone, we need to have some end margin to display the system icons
-        // correctly.
-        int baseMarginEnd = mMultiUserAvatar.getVisibility() == View.GONE
-                ? mSystemIconsBaseMargin
-                : 0;
+
+        int marginStart = getResources().getDimensionPixelSize(
+                R.dimen.system_icons_super_container_margin_start);
+
+        // Use status_bar_padding_end to replace original
+        // system_icons_super_container_avatarless_margin_end to prevent different end alignment
+        // between PhoneStatusBarView and KeyguardStatusBarView
+        int baseMarginEnd = mStatusBarPaddingEnd;
         int marginEnd =
                 mKeyguardUserSwitcherEnabled ? mSystemIconsSwitcherHiddenExpandedMargin
                         : baseMarginEnd;
-        marginEnd = calculateMargin(marginEnd, mPadding.second);
-        if (marginEnd != lp.getMarginEnd()) {
+
+        // Align PhoneStatusBar right margin/padding, only use
+        // 1. status bar layout: mPadding(consider round_corner + privacy dot)
+        // 2. icon container: R.dimen.status_bar_padding_end
+
+        if (marginEnd != lp.getMarginEnd() || marginStart != lp.getMarginStart()) {
+            lp.setMarginStart(marginStart);
             lp.setMarginEnd(marginEnd);
             mSystemIconsContainer.setLayoutParams(lp);
         }
@@ -284,7 +291,13 @@ public class KeyguardStatusBarView extends RelativeLayout implements
         mPadding =
                 StatusBarWindowView.paddingNeededForCutoutAndRoundedCorner(
                         mDisplayCutout, cornerCutoutMargins, mRoundedCornerPadding);
-        setPadding(mPadding.first, waterfallTop, mPadding.second, 0);
+
+        // consider privacy dot space
+        final int minLeft = isLayoutRtl() ? Math.max(mMinDotWidth, mPadding.first) : mPadding.first;
+        final int minRight = isLayoutRtl() ? mPadding.second :
+                Math.max(mMinDotWidth, mPadding.second);
+
+        setPadding(minLeft, waterfallTop, minRight, 0);
     }
 
     private boolean updateLayoutParamsNoCutout() {
@@ -364,7 +377,7 @@ public class KeyguardStatusBarView extends RelativeLayout implements
         userInfoController.addCallback(this);
         userInfoController.reloadUserInfo();
         Dependency.get(ConfigurationController.class).addCallback(this);
-        mIconManager = new TintedIconManager(findViewById(R.id.statusIcons));
+        mIconManager = new TintedIconManager(findViewById(R.id.statusIcons), mFeatureFlags);
         mIconManager.setBlockList(mBlockedIcons);
         Dependency.get(StatusBarIconController.class).addIconGroup(mIconManager);
         mAnimationScheduler.addCallback(this);

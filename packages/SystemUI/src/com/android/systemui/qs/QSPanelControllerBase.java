@@ -25,6 +25,7 @@ import android.content.ComponentName;
 import android.content.res.Configuration;
 import android.metrics.LogMaker;
 
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.UiEventLogger;
 import com.android.systemui.Dumpable;
@@ -80,7 +81,8 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
 
     private final QSHost.Callback mQSHostCallback = this::setTiles;
 
-    private final QSPanel.OnConfigurationChangedListener mOnConfigurationChangedListener =
+    @VisibleForTesting
+    protected final QSPanel.OnConfigurationChangedListener mOnConfigurationChangedListener =
             new QSPanel.OnConfigurationChangedListener() {
                 @Override
                 public void onConfigurationChange(Configuration newConfig) {
@@ -102,6 +104,9 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
     };
 
     private boolean mUsingHorizontalLayout;
+
+    @Nullable
+    private Runnable mUsingHorizontalLayoutChangedListener;
 
     protected QSPanelControllerBase(
             T view,
@@ -135,6 +140,13 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
         mQSLogger.logAllTilesChangeListening(mView.isListening(), mView.getDumpableTag(), "");
     }
 
+    /**
+     * @return the media host for this panel
+     */
+    public MediaHost getMediaHost() {
+        return mMediaHost;
+    }
+
     @Override
     protected void onViewAttached() {
         mQsTileRevealController = createTileRevealController();
@@ -146,6 +158,7 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
         mView.addOnConfigurationChangedListener(mOnConfigurationChangedListener);
         mHost.addCallback(mQSHostCallback);
         setTiles();
+        mLastOrientation = getResources().getConfiguration().orientation;
         switchTileLayout(true);
 
         mDumpManager.registerDumpable(mView.getDumpableTag(), this);
@@ -303,6 +316,9 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
             mUsingHorizontalLayout = horizontal;
             mView.setUsingHorizontalLayout(mUsingHorizontalLayout, mMediaHost.getHostView(), force);
             updateMediaDisappearParameters();
+            if (mUsingHorizontalLayoutChangedListener != null) {
+                mUsingHorizontalLayoutChangedListener.run();
+            }
             return true;
         }
         return false;
@@ -343,8 +359,7 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
             return false;
         }
         return mUsingMediaPlayer && mMediaHost.getVisible()
-                    && getResources().getConfiguration().orientation
-                    == Configuration.ORIENTATION_LANDSCAPE;
+                && mLastOrientation == Configuration.ORIENTATION_LANDSCAPE;
     }
 
     private void logTiles() {
@@ -384,6 +399,13 @@ public abstract class QSPanelControllerBase<T extends QSPanel> extends ViewContr
      */
     public void setMediaVisibilityChangedListener(@NonNull Consumer<Boolean> listener) {
         mMediaVisibilityChangedListener = listener;
+    }
+
+    /**
+     * Add a listener when the horizontal layout changes
+     */
+    public void setUsingHorizontalLayoutChangeListener(Runnable listener) {
+        mUsingHorizontalLayoutChangedListener = listener;
     }
 
     /** */

@@ -115,14 +115,24 @@ public abstract class RecognitionService extends Service {
             @NonNull AttributionSource attributionSource) {
         try {
             if (mCurrentCallback == null) {
-                if (DBG) {
-                    Log.d(TAG, "created new mCurrentCallback, listener = " + listener.asBinder());
+                boolean preflightPermissionCheckPassed = checkPermissionForPreflightNotHardDenied(
+                        attributionSource);
+                if (preflightPermissionCheckPassed) {
+                    if (DBG) {
+                        Log.d(TAG, "created new mCurrentCallback, listener = "
+                                + listener.asBinder());
+                    }
+                    mCurrentCallback = new Callback(listener, attributionSource);
+                    RecognitionService.this.onStartListening(intent, mCurrentCallback);
                 }
-                mCurrentCallback = new Callback(listener, attributionSource);
 
-                RecognitionService.this.onStartListening(intent, mCurrentCallback);
-                if (!checkPermissionAndStartDataDelivery()) {
+                if (!preflightPermissionCheckPassed || !checkPermissionAndStartDataDelivery()) {
                     listener.onError(SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS);
+                    if (preflightPermissionCheckPassed) {
+                        // If we attempted to start listening, cancel the callback
+                        RecognitionService.this.onCancel(mCurrentCallback);
+                        dispatchClearCallback();
+                    }
                     Log.i(TAG, "caller doesn't have permission:"
                             + Manifest.permission.RECORD_AUDIO);
                 }
@@ -259,6 +269,7 @@ public abstract class RecognitionService extends Service {
     @Override
     public void onDestroy() {
         if (DBG) Log.d(TAG, "onDestroy");
+        finishDataDelivery();
         mCurrentCallback = null;
         mBinder.clearReference();
         super.onDestroy();
@@ -457,6 +468,13 @@ public abstract class RecognitionService extends Service {
             mStartedDataDelivery = true;
         }
         return mStartedDataDelivery;
+    }
+
+    private boolean checkPermissionForPreflightNotHardDenied(AttributionSource attributionSource) {
+        int result = PermissionChecker.checkPermissionForPreflight(RecognitionService.this,
+                Manifest.permission.RECORD_AUDIO, attributionSource);
+        return result == PermissionChecker.PERMISSION_GRANTED
+                || result == PermissionChecker.PERMISSION_SOFT_DENIED;
     }
 
     void finishDataDelivery() {

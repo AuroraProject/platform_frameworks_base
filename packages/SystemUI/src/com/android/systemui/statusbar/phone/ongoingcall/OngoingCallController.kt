@@ -104,7 +104,16 @@ class OngoingCallController @Inject constructor(
             }
         }
 
+        // Fix for b/199600334
+        override fun onEntryCleanUp(entry: NotificationEntry) {
+            removeChipIfNeeded(entry)
+        }
+
         override fun onEntryRemoved(entry: NotificationEntry, reason: Int) {
+            removeChipIfNeeded(entry)
+        }
+
+        private fun removeChipIfNeeded(entry: NotificationEntry) {
             if (entry.sbn.key == callNotificationInfo?.key) {
                 removeChip()
             }
@@ -172,10 +181,16 @@ class OngoingCallController @Inject constructor(
             currentChipView?.findViewById<View>(R.id.ongoing_call_chip_background)
 
         if (currentChipView != null && timeView != null && backgroundView != null) {
-            timeView.base = currentCallNotificationInfo.callStartTime -
-                    System.currentTimeMillis() +
-                    systemClock.elapsedRealtime()
-            timeView.start()
+            if (currentCallNotificationInfo.hasValidStartTime()) {
+                timeView.setShouldHideText(false)
+                timeView.base = currentCallNotificationInfo.callStartTime -
+                        systemClock.currentTimeMillis() +
+                        systemClock.elapsedRealtime()
+                timeView.start()
+            } else {
+                timeView.setShouldHideText(true)
+                timeView.stop()
+            }
 
             currentCallNotificationInfo.intent?.let { intent ->
                 currentChipView.setOnClickListener {
@@ -211,6 +226,10 @@ class OngoingCallController @Inject constructor(
     private fun setUpUidObserver(currentCallNotificationInfo: CallNotificationInfo) {
         isCallAppVisible = isProcessVisibleToUser(
                 iActivityManager.getUidProcessState(currentCallNotificationInfo.uid, null))
+
+        if (uidObserver != null) {
+            iActivityManager.unregisterUidObserver(uidObserver)
+        }
 
         uidObserver = object : IUidObserver.Stub() {
             override fun onUidStateChanged(
@@ -260,7 +279,9 @@ class OngoingCallController @Inject constructor(
     @VisibleForTesting
     fun tearDownChipView() = chipView?.getTimeView()?.stop()
 
-    private fun View.getTimeView(): Chronometer? = this.findViewById(R.id.ongoing_call_chip_time)
+    private fun View.getTimeView(): OngoingCallChronometer? {
+        return this.findViewById(R.id.ongoing_call_chip_time)
+    }
 
     private data class CallNotificationInfo(
         val key: String,
@@ -269,7 +290,13 @@ class OngoingCallController @Inject constructor(
         val uid: Int,
         /** True if the call is currently ongoing (as opposed to incoming, screening, etc.). */
         val isOngoing: Boolean
-    )
+    ) {
+        /**
+         * Returns true if the notification information has a valid call start time.
+         * See b/192379214.
+         */
+        fun hasValidStartTime(): Boolean = callStartTime > 0
+    }
 }
 
 private fun isCallNotification(entry: NotificationEntry): Boolean {

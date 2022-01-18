@@ -118,8 +118,8 @@ public class ScreenshotView extends FrameLayout implements
     private static final long SCREENSHOT_TO_CORNER_SCALE_DURATION_MS = 234;
     private static final long SCREENSHOT_ACTIONS_EXPANSION_DURATION_MS = 400;
     private static final long SCREENSHOT_ACTIONS_ALPHA_DURATION_MS = 100;
-    private static final long SCREENSHOT_DISMISS_Y_DURATION_MS = 350;
-    private static final long SCREENSHOT_DISMISS_ALPHA_DURATION_MS = 183;
+    private static final long SCREENSHOT_DISMISS_X_DURATION_MS = 350;
+    private static final long SCREENSHOT_DISMISS_ALPHA_DURATION_MS = 350;
     private static final long SCREENSHOT_DISMISS_ALPHA_OFFSET_MS = 50; // delay before starting fade
     private static final float SCREENSHOT_ACTIONS_START_SCALE_X = .7f;
     private static final float ROUNDED_CORNER_RADIUS = .25f;
@@ -137,11 +137,13 @@ public class ScreenshotView extends FrameLayout implements
     private int mNavMode;
     private boolean mOrientationPortrait;
     private boolean mDirectionLTR;
+    private int mStaticLeftMargin;
 
     private ScreenshotSelectorView mScreenshotSelectorView;
     private ImageView mScrollingScrim;
     private View mScreenshotStatic;
     private ImageView mScreenshotPreview;
+    private View mTransitionView;
     private View mScreenshotPreviewBorder;
     private ImageView mScrollablePreview;
     private ImageView mScreenshotFlash;
@@ -240,19 +242,21 @@ public class ScreenshotView extends FrameLayout implements
     /**
      * Called to display the scroll action chip when support is detected.
      *
+     * @param packageName the owning package of the window to be captured
      * @param onClick the action to take when the chip is clicked.
      */
-    public void showScrollChip(Runnable onClick) {
+    public void showScrollChip(String packageName, Runnable onClick) {
         if (DEBUG_SCROLL) {
             Log.d(TAG, "Showing Scroll option");
         }
-        mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_LONG_SCREENSHOT_IMPRESSION);
+        mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_LONG_SCREENSHOT_IMPRESSION, 0, packageName);
         mScrollChip.setVisibility(VISIBLE);
         mScrollChip.setOnClickListener((v) -> {
             if (DEBUG_INPUT) {
                 Log.d(TAG, "scroll chip tapped");
             }
-            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_LONG_SCREENSHOT_REQUESTED);
+            mUiEventLogger.log(ScreenshotEvent.SCREENSHOT_LONG_SCREENSHOT_REQUESTED, 0,
+                    packageName);
             onClick.run();
         });
     }
@@ -337,6 +341,7 @@ public class ScreenshotView extends FrameLayout implements
         mScrollingScrim = requireNonNull(findViewById(R.id.screenshot_scrolling_scrim));
         mScreenshotStatic = requireNonNull(findViewById(R.id.global_screenshot_static));
         mScreenshotPreview = requireNonNull(findViewById(R.id.global_screenshot_preview));
+        mTransitionView = requireNonNull(findViewById(R.id.screenshot_transition_view));
         mScreenshotPreviewBorder = requireNonNull(
                 findViewById(R.id.global_screenshot_preview_border));
         mScreenshotPreview.setClipToOutline(true);
@@ -382,8 +387,12 @@ public class ScreenshotView extends FrameLayout implements
         requestFocus();
     }
 
-    View getScreenshotPreview() {
-        return mScreenshotPreview;
+    View getTransitionView() {
+        return mTransitionView;
+    }
+
+    int getStaticLeftMargin() {
+        return mStaticLeftMargin;
     }
 
     /**
@@ -407,31 +416,41 @@ public class ScreenshotView extends FrameLayout implements
         mScreenshotPreview.setImageDrawable(createScreenDrawable(mResources, bitmap, screenInsets));
     }
 
-    void updateDisplayCutoutMargins(DisplayCutout cutout) {
+    void updateInsets(WindowInsets insets) {
         int orientation = mContext.getResources().getConfiguration().orientation;
         mOrientationPortrait = (orientation == ORIENTATION_PORTRAIT);
         FrameLayout.LayoutParams p =
                 (FrameLayout.LayoutParams) mScreenshotStatic.getLayoutParams();
+        DisplayCutout cutout = insets.getDisplayCutout();
+        Insets navBarInsets = insets.getInsets(WindowInsets.Type.navigationBars());
         if (cutout == null) {
-            p.setMargins(0, 0, 0, 0);
+            p.setMargins(0, 0, 0, navBarInsets.bottom);
         } else {
             Insets waterfall = cutout.getWaterfallInsets();
             if (mOrientationPortrait) {
-                p.setMargins(waterfall.left, Math.max(cutout.getSafeInsetTop(), waterfall.top),
-                        waterfall.right, Math.max(cutout.getSafeInsetBottom(), waterfall.bottom));
+                p.setMargins(
+                        waterfall.left,
+                        Math.max(cutout.getSafeInsetTop(), waterfall.top),
+                        waterfall.right,
+                        Math.max(cutout.getSafeInsetBottom(),
+                                Math.max(navBarInsets.bottom, waterfall.bottom)));
             } else {
-                p.setMargins(Math.max(cutout.getSafeInsetLeft(), waterfall.left), waterfall.top,
-                        Math.max(cutout.getSafeInsetRight(), waterfall.right), waterfall.bottom);
+                p.setMargins(
+                        Math.max(cutout.getSafeInsetLeft(), waterfall.left),
+                        waterfall.top,
+                        Math.max(cutout.getSafeInsetRight(), waterfall.right),
+                        Math.max(navBarInsets.bottom, waterfall.bottom));
             }
         }
+        mStaticLeftMargin = p.leftMargin;
         mScreenshotStatic.setLayoutParams(p);
         mScreenshotStatic.requestLayout();
     }
 
-    void updateOrientation(DisplayCutout cutout) {
+    void updateOrientation(WindowInsets insets) {
         int orientation = mContext.getResources().getConfiguration().orientation;
         mOrientationPortrait = (orientation == ORIENTATION_PORTRAIT);
-        updateDisplayCutoutMargins(cutout);
+        updateInsets(insets);
         int screenshotFixedSize =
                 mContext.getResources().getDimensionPixelSize(R.dimen.global_screenshot_x_scale);
         ViewGroup.LayoutParams params = mScreenshotPreview.getLayoutParams();
@@ -860,7 +879,8 @@ public class ScreenshotView extends FrameLayout implements
             matrix.setScale(scale, scale);
             matrix.postTranslate(-scrollableArea.left * scale, -scrollableArea.top * scale);
 
-            mScrollablePreview.setTranslationX(scale * scrollableArea.left);
+            mScrollablePreview.setTranslationX(scale
+                    * (mDirectionLTR ? scrollableArea.left : scrollableArea.right - getWidth()));
             mScrollablePreview.setTranslationY(scale * scrollableArea.top);
             mScrollablePreview.setImageMatrix(matrix);
             mScrollablePreview.setImageBitmap(screenBitmap);
@@ -969,7 +989,6 @@ public class ScreenshotView extends FrameLayout implements
         mScrollingScrim.setVisibility(View.GONE);
         mScrollablePreview.setVisibility(View.GONE);
         mScreenshotStatic.setTranslationX(0);
-        mScreenshotPreview.setTranslationY(0);
         mScreenshotPreview.setContentDescription(
                 mContext.getResources().getString(R.string.screenshot_preview_description));
         mScreenshotPreview.setOnClickListener(null);
@@ -985,9 +1004,6 @@ public class ScreenshotView extends FrameLayout implements
         mSmartChips.clear();
         mQuickShareChip = null;
         setAlpha(1);
-        mDismissButton.setTranslationY(0);
-        mActionsContainer.setTranslationY(0);
-        mActionsContainerBackground.setTranslationY(0);
         mScreenshotSelectorView.stop();
     }
 
@@ -1015,22 +1031,19 @@ public class ScreenshotView extends FrameLayout implements
             setAlpha(1 - animation.getAnimatedFraction());
         });
 
-        ValueAnimator yAnim = ValueAnimator.ofFloat(0, 1);
-        yAnim.setInterpolator(mAccelerateInterpolator);
-        yAnim.setDuration(SCREENSHOT_DISMISS_Y_DURATION_MS);
-        float screenshotStartY = mScreenshotPreview.getTranslationY();
-        float dismissStartY = mDismissButton.getTranslationY();
-        yAnim.addUpdateListener(animation -> {
-            float yDelta = MathUtils.lerp(0, mDismissDeltaY, animation.getAnimatedFraction());
-            mScreenshotPreview.setTranslationY(screenshotStartY + yDelta);
-            mScreenshotPreviewBorder.setTranslationY(screenshotStartY + yDelta);
-            mDismissButton.setTranslationY(dismissStartY + yDelta);
-            mActionsContainer.setTranslationY(yDelta);
-            mActionsContainerBackground.setTranslationY(yDelta);
+        ValueAnimator xAnim = ValueAnimator.ofFloat(0, 1);
+        xAnim.setInterpolator(mAccelerateInterpolator);
+        xAnim.setDuration(SCREENSHOT_DISMISS_X_DURATION_MS);
+        float deltaX = mDirectionLTR
+                    ? -1 * (mScreenshotPreviewBorder.getX() + mScreenshotPreviewBorder.getWidth())
+                    : (mDisplayMetrics.widthPixels - mScreenshotPreviewBorder.getX());
+        xAnim.addUpdateListener(animation -> {
+            float currXDelta = MathUtils.lerp(0, deltaX, animation.getAnimatedFraction());
+            mScreenshotStatic.setTranslationX(currXDelta);
         });
 
         AnimatorSet animSet = new AnimatorSet();
-        animSet.play(yAnim).with(alphaAnim);
+        animSet.play(xAnim).with(alphaAnim);
 
         return animSet;
     }

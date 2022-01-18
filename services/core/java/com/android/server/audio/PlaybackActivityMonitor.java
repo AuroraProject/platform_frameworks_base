@@ -380,10 +380,12 @@ public final class PlaybackActivityMonitor
     }
 
     /**
-     * Return all cached capture policies.
+     * Return a copy of all cached capture policies.
      */
     public HashMap<Integer, Integer> getAllAllowedCapturePolicies() {
-        return mAllowedCapturePolicies;
+        synchronized (mAllowedCapturePolicies) {
+            return (HashMap<Integer, Integer>) mAllowedCapturePolicies.clone();
+        }
     }
 
     private void updateAllowedCapturePolicy(AudioPlaybackConfiguration apc, int capturePolicy) {
@@ -745,7 +747,11 @@ public final class PlaybackActivityMonitor
 
     @Override
     public void forgetUid(int uid) {
-        mFadingManager.forgetUid(uid);
+        final HashMap<Integer, AudioPlaybackConfiguration> players;
+        synchronized (mPlayerLock) {
+            players = (HashMap<Integer, AudioPlaybackConfiguration>) mPlayers.clone();
+        }
+        mFadingManager.unfadeOutUid(uid, players);
     }
 
     //=================================================================

@@ -1568,17 +1568,23 @@ public final class BroadcastQueue {
                     perm = PackageManager.PERMISSION_DENIED;
                 }
 
-                if (perm == PackageManager.PERMISSION_GRANTED) {
-                    skip = true;
-                    break;
-                }
-
                 int appOp = AppOpsManager.permissionToOpCode(excludedPermission);
                 if (appOp != AppOpsManager.OP_NONE) {
-                    if (mService.getAppOpsManager().checkOpNoThrow(appOp,
+                    // When there is an app op associated with the permission,
+                    // skip when both the permission and the app op are
+                    // granted.
+                    if ((perm == PackageManager.PERMISSION_GRANTED) && (
+                                mService.getAppOpsManager().checkOpNoThrow(appOp,
                                 info.activityInfo.applicationInfo.uid,
                                 info.activityInfo.packageName)
-                            == AppOpsManager.MODE_ALLOWED) {
+                            == AppOpsManager.MODE_ALLOWED)) {
+                        skip = true;
+                        break;
+                    }
+                } else {
+                    // When there is no app op associated with the permission,
+                    // skip when permission is granted.
+                    if (perm == PackageManager.PERMISSION_GRANTED) {
                         skip = true;
                         break;
                     }
@@ -1652,7 +1658,7 @@ public final class BroadcastQueue {
         maybeScheduleTempAllowlistLocked(receiverUid, r, brOptions);
 
         // Report that a component is used for explicit broadcasts.
-        if (!r.intent.isExcludingStopped() && r.curComponent != null
+        if (r.intent.getComponent() != null && r.curComponent != null
                 && !TextUtils.equals(r.curComponent.getPackageName(), r.callerPackage)) {
             mService.mUsageStatsService.reportEvent(
                     r.curComponent.getPackageName(), r.userId, Event.APP_COMPONENT_USED);

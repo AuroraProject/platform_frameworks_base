@@ -202,7 +202,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"GNSS үйлчилгээ"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"Мэдрэгчийн мэдэгдлийн үйлчилгээ"</string>
     <string name="twilight_service" msgid="8964898045693187224">"Twilight үйлчилгээ"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"Цагийн бүс илрүүлэгч (Холболт байхгүй)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"GNSS Хугацаа шинэчлэлтийн үйлчилгээ"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"Хөгжим танилтын менежерийн үйлчилгээ"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"Таны төхөөрөмж устах болно."</string>
@@ -610,6 +609,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"Үргэлжлүүлэхийн тулд хурууны хээ эсвэл дэлгэцийн түгжээгээ ашиглана уу"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"Алдаа гарлаа. Дахин оролдоно уу."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"Хурууны хээний дүрс"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"Царайгаар түгжээ тайлах"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"Царайгаар түгжээ тайлахтай холбоотой асуудал"</string>
@@ -662,6 +662,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"Үргэлжлүүлэхийн тулд царай эсвэл дэлгэцийн түгжээгээ ашиглана уу"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"Алдаа гарлаа. Дахин оролдоно уу."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"Царайны дүрс тэмдэг"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"синк тохиргоог унших"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"Апп нь бүртгэлийн синк тохиргоог унших боломжтой. Жишээ нь энэ нь Хүмүүс апп бүртгэлтэй синк хийгдсэн эсэхийг тодорхойлох боломжтой."</string>
@@ -1483,6 +1484,7 @@
     <string name="deny" msgid="6632259981847676572">"Татгалзах"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"Зөвшөөрөл хүсэв"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"<xliff:g id="ACCOUNT">%s</xliff:g> бүртгэл зөвшөөрөл \n хүссэн"</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"<xliff:g id="APP">%1$s</xliff:g>\n нь <xliff:g id="ACCOUNT">%2$s</xliff:g> бүртгэлд зөвшөөрөл хүссэн."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"Та энэ апп-г өөрийн ажлын профайлаас гадуур ашиглаж байна"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"Та энэ апп-г өөрийн ажлын профайл дотор ашиглаж байна"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"Оруулах арга"</string>
@@ -2095,7 +2097,7 @@
     <string name="notification_feedback_indicator_promoted" msgid="9030204303764698640">"Энэ мэдэгдлийг дээгүүр зэрэглэсэн байна. Санал хүсэлт өгөхийн тулд товшино уу."</string>
     <string name="notification_feedback_indicator_demoted" msgid="8880309924296450875">"Энэ мэдэгдлийг доогуур зэрэглэсэн байна. Санал хүсэлт өгөхийн тулд товшино уу."</string>
     <string name="nas_upgrade_notification_title" msgid="8436359459300146555">"Сайжруулсан мэдэгдэл"</string>
-    <string name="nas_upgrade_notification_content" msgid="5157550369837103337">"Санал болгосон үйлдлүүд болон хариунуудыг одоо сайржуулсан мэдэгдлээр олгоно. Android-н Орчинтой тохирсон мэдэгдлийг цаашид дэмжихээ больсон."</string>
+    <string name="nas_upgrade_notification_content" msgid="5157550369837103337">"Санал болгосон үйлдэл, хариултыг одоо сайржуулсан мэдэгдлээр олгоно. Android-н Орчинтой тохирсон мэдэгдлийг цаашид дэмжихээ больсон."</string>
     <string name="nas_upgrade_notification_enable_action" msgid="3046406808378726874">"OK"</string>
     <string name="nas_upgrade_notification_disable_action" msgid="3794833210043497982">"Унтраах"</string>
     <string name="nas_upgrade_notification_learn_more_action" msgid="7011130656195423947">"Нэмэлт мэдээлэл авах"</string>

@@ -155,7 +155,7 @@ public class LocationProviderManager extends
     private static final float FASTEST_INTERVAL_JITTER_PERCENTAGE = .10f;
 
     // max absolute jitter allowed for min update interval evaluation
-    private static final int MAX_FASTEST_INTERVAL_JITTER_MS = 5 * 1000;
+    private static final int MAX_FASTEST_INTERVAL_JITTER_MS = 30 * 1000;
 
     // minimum amount of request delay in order to respect the delay, below this value the request
     // will just be scheduled immediately
@@ -243,15 +243,24 @@ public class LocationProviderManager extends
                 intent.putExtra(KEY_LOCATIONS, locationResult.asList().toArray(new Location[0]));
             }
 
+            // send() SHOULD only run the completion callback if it completes successfully. however,
+            // b/199464864 (which could not be fixed in the S timeframe) means that it's possible
+            // for send() to throw an exception AND run the completion callback. if this happens, we
+            // would over-release the wakelock... we take matters into our own hands to ensure that
+            // the completion callback can only be run if send() completes successfully. this means
+            // the completion callback may be run inline - but as we've never specified what thread
+            // the callback is run on, this is fine.
+            GatedCallback gatedCallback = new GatedCallback(onCompleteCallback);
+
             mPendingIntent.send(
                     mContext,
                     0,
                     intent,
-                    onCompleteCallback != null ? (pI, i, rC, rD, rE) -> onCompleteCallback.run()
-                            : null,
+                    (pI, i, rC, rD, rE) -> gatedCallback.run(),
                     null,
                     null,
                     options.toBundle());
+            gatedCallback.allow();
         }
 
         @Override
@@ -538,7 +547,7 @@ public class LocationProviderManager extends
 
                 mPermitted = permitted;
 
-                if (mForeground) {
+                if (mPermitted) {
                     EVENT_LOG.logProviderClientPermitted(mName, getIdentity());
                 } else {
                     EVENT_LOG.logProviderClientUnpermitted(mName, getIdentity());
@@ -735,8 +744,12 @@ public class LocationProviderManager extends
             if (mExpirationRealtimeMs <= registerTimeMs) {
                 onAlarm();
             } else if (mExpirationRealtimeMs < Long.MAX_VALUE) {
+                // Set WorkSource to null in order to ensure the alarm wakes up the device even when
+                // it is idle. Do this when the cost of waking up the device is less than the power
+                // cost of not performing the actions set off by the alarm, such as unregistering a
+                // location request.
                 mAlarmHelper.setDelayedAlarm(mExpirationRealtimeMs - registerTimeMs, this,
-                        getRequest().getWorkSource());
+                        null);
             }
 
             // start listening for provider enabled/disabled events
@@ -1074,7 +1087,7 @@ public class LocationProviderManager extends
         }
 
         private void onTransportFailure(Exception e) {
-            if (e instanceof RemoteException) {
+            if (e instanceof PendingIntent.CanceledException) {
                 Log.w(TAG, mName + " provider registration " + getIdentity() + " removed", e);
                 synchronized (mLock) {
                     remove();
@@ -1122,8 +1135,12 @@ public class LocationProviderManager extends
             if (mExpirationRealtimeMs <= registerTimeMs) {
                 onAlarm();
             } else if (mExpirationRealtimeMs < Long.MAX_VALUE) {
+                // Set WorkSource to null in order to ensure the alarm wakes up the device even when
+                // it is idle. Do this when the cost of waking up the device is less than the power
+                // cost of not performing the actions set off by the alarm, such as unregistering a
+                // location request.
                 mAlarmHelper.setDelayedAlarm(mExpirationRealtimeMs - registerTimeMs, this,
-                        getRequest().getWorkSource());
+                        null);
             }
         }
 
@@ -1952,11 +1969,6 @@ public class LocationProviderManager extends
             Preconditions.checkState(Thread.holdsLock(mLock));
         }
 
-        if (mDelayedRegister != null) {
-            mAlarmHelper.cancel(mDelayedRegister);
-            mDelayedRegister = null;
-        }
-
         // calculate how long the new request should be delayed before sending it off to the
         // provider, under the assumption that once we send the request off, the provider will
         // immediately attempt to deliver a new location satisfying that request.
@@ -1989,13 +2001,17 @@ public class LocationProviderManager extends
                 public void onAlarm() {
                     synchronized (mLock) {
                         if (mDelayedRegister == this) {
-                            setProviderRequest(newRequest);
                             mDelayedRegister = null;
+                            setProviderRequest(newRequest);
                         }
                     }
                 }
             };
-            mAlarmHelper.setDelayedAlarm(delayMs, mDelayedRegister, newRequest.getWorkSource());
+            // Set WorkSource to null in order to ensure the alarm wakes up the device even when it
+            // is idle. Do this when the cost of waking up the device is less than the power cost of
+            // not performing the actions set off by the alarm, such as unregistering a location
+            // request.
+            mAlarmHelper.setDelayedAlarm(delayMs, mDelayedRegister, null);
         }
 
         return true;
@@ -2013,6 +2029,11 @@ public class LocationProviderManager extends
 
     @GuardedBy("mLock")
     void setProviderRequest(ProviderRequest request) {
+        if (mDelayedRegister != null) {
+            mAlarmHelper.cancel(mDelayedRegister);
+            mDelayedRegister = null;
+        }
+
         EVENT_LOG.logProviderUpdateRequest(mName, request);
         mProvider.getController().setRequest(request);
 
@@ -2719,6 +2740,51 @@ public class LocationProviderManager extends
                 throw e;
             } finally {
                 Binder.restoreCallingIdentity(identity);
+            }
+        }
+    }
+
+    private static class GatedCallback implements Runnable {
+
+        private @Nullable Runnable mCallback;
+
+        @GuardedBy("this")
+        private boolean mGate;
+        @GuardedBy("this")
+        private boolean mRun;
+
+        GatedCallback(Runnable callback) {
+            mCallback = callback;
+        }
+
+        public void allow() {
+            Runnable callback = null;
+            synchronized (this) {
+                mGate = true;
+                if (mRun && mCallback != null) {
+                    callback = mCallback;
+                    mCallback = null;
+                }
+            }
+
+            if (callback != null) {
+                callback.run();
+            }
+        }
+
+        @Override
+        public void run() {
+            Runnable callback = null;
+            synchronized (this) {
+                mRun = true;
+                if (mGate && mCallback != null) {
+                    callback = mCallback;
+                    mCallback = null;
+                }
+            }
+
+            if (callback != null) {
+                callback.run();
             }
         }
     }

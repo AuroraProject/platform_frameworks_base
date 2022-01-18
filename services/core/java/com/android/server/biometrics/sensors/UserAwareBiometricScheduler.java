@@ -62,39 +62,47 @@ public class UserAwareBiometricScheduler extends BiometricScheduler {
         @Override
         public void onClientFinished(@NonNull BaseClientMonitor clientMonitor, boolean success) {
             mHandler.post(() -> {
-                if (mOwner == clientMonitor && mOwner == mCurrentOperation.mClientMonitor) {
-                    Slog.d(getTag(), "[Client finished] "
-                            + clientMonitor + ", success: " + success);
-                    mCurrentOperation = null;
-                } else {
-                    Slog.e(getTag(), "[Client finished, but not current operation], actual: "
-                            + mCurrentOperation + ", expected: " + mOwner);
+                if (mOwner != clientMonitor) {
+                    Slog.e(getTag(), "[Wrong client finished], actual: "
+                            + clientMonitor + ", expected: " + mOwner);
+                    return;
                 }
 
-                startNextOperationIfIdle();
+                Slog.d(getTag(), "[Client finished] "
+                        + clientMonitor + ", success: " + success);
+                if (mCurrentOperation != null && mCurrentOperation.mClientMonitor == mOwner) {
+                    mCurrentOperation = null;
+                    startNextOperationIfIdle();
+                } else {
+                    // can usually be ignored (hal died, etc.)
+                    Slog.d(getTag(), "operation is already null or different (reset?): "
+                            + mCurrentOperation);
+                }
             });
         }
     }
 
     @VisibleForTesting
-    UserAwareBiometricScheduler(@NonNull String tag,
+    UserAwareBiometricScheduler(@NonNull String tag, @SensorType int sensorType,
             @Nullable GestureAvailabilityDispatcher gestureAvailabilityDispatcher,
             @NonNull IBiometricService biometricService,
             @NonNull CurrentUserRetriever currentUserRetriever,
-            @NonNull UserSwitchCallback userSwitchCallback) {
-        super(tag, gestureAvailabilityDispatcher, biometricService, LOG_NUM_RECENT_OPERATIONS);
+            @NonNull UserSwitchCallback userSwitchCallback,
+            @NonNull CoexCoordinator coexCoordinator) {
+        super(tag, sensorType, gestureAvailabilityDispatcher, biometricService,
+                LOG_NUM_RECENT_OPERATIONS, coexCoordinator);
 
         mCurrentUserRetriever = currentUserRetriever;
         mUserSwitchCallback = userSwitchCallback;
     }
 
-    public UserAwareBiometricScheduler(@NonNull String tag,
+    public UserAwareBiometricScheduler(@NonNull String tag, @SensorType int sensorType,
             @Nullable GestureAvailabilityDispatcher gestureAvailabilityDispatcher,
             @NonNull CurrentUserRetriever currentUserRetriever,
             @NonNull UserSwitchCallback userSwitchCallback) {
-        this(tag, gestureAvailabilityDispatcher, IBiometricService.Stub.asInterface(
+        this(tag, sensorType, gestureAvailabilityDispatcher, IBiometricService.Stub.asInterface(
                 ServiceManager.getService(Context.BIOMETRIC_SERVICE)), currentUserRetriever,
-                userSwitchCallback);
+                userSwitchCallback, CoexCoordinator.getInstance());
     }
 
     @Override
@@ -125,9 +133,9 @@ public class UserAwareBiometricScheduler extends BiometricScheduler {
                     new ClientFinishedCallback(startClient);
 
             Slog.d(getTag(), "[Starting User] " + startClient);
-            startClient.start(finishedCallback);
             mCurrentOperation = new Operation(
                     startClient, finishedCallback, Operation.STATE_STARTED);
+            startClient.start(finishedCallback);
         } else {
             if (mStopUserClient != null) {
                 Slog.d(getTag(), "[Waiting for StopUser] " + mStopUserClient);
@@ -139,9 +147,9 @@ public class UserAwareBiometricScheduler extends BiometricScheduler {
 
                 Slog.d(getTag(), "[Stopping User] current: " + currentUserId
                         + ", next: " + nextUserId + ". " + mStopUserClient);
-                mStopUserClient.start(finishedCallback);
                 mCurrentOperation = new Operation(
                         mStopUserClient, finishedCallback, Operation.STATE_STARTED);
+                mStopUserClient.start(finishedCallback);
             }
         }
     }

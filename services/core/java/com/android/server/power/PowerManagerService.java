@@ -129,6 +129,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
@@ -273,6 +274,7 @@ public final class PowerManagerService extends SystemService
     private final BatterySavingStats mBatterySavingStats;
     private final AttentionDetector mAttentionDetector;
     private final FaceDownDetector mFaceDownDetector;
+    private final ScreenUndimDetector mScreenUndimDetector;
     private final BinderService mBinderService;
     private final LocalService mLocalService;
     private final NativeWrapper mNativeWrapper;
@@ -531,6 +533,11 @@ public final class PowerManagerService extends SystemService
 
     // True if the proximity sensor reads a positive result.
     private boolean mProximityPositive;
+
+    // Indicates that we have already intercepted the power key to temporarily ignore the proximity
+    // wake lock and turn the screen back on. This should get reset when prox reads 'far' again
+    // (when {@link #mProximityPositive} is set to false).
+    private boolean mInterceptedPowerKeyForProximity;
 
     // Screen brightness setting limits.
     public final float mScreenBrightnessMinimum;
@@ -831,9 +838,10 @@ public final class PowerManagerService extends SystemService
     static class Injector {
         Notifier createNotifier(Looper looper, Context context, IBatteryStats batteryStats,
                 SuspendBlocker suspendBlocker, WindowManagerPolicy policy,
-                FaceDownDetector faceDownDetector) {
+                FaceDownDetector faceDownDetector, ScreenUndimDetector screenUndimDetector) {
             return new Notifier(
-                    looper, context, batteryStats, suspendBlocker, policy, faceDownDetector);
+                    looper, context, batteryStats, suspendBlocker, policy, faceDownDetector,
+                    screenUndimDetector);
         }
 
         SuspendBlocker createSuspendBlocker(PowerManagerService service, String name) {
@@ -954,6 +962,7 @@ public final class PowerManagerService extends SystemService
                 mInjector.createAmbientDisplaySuppressionController(context);
         mAttentionDetector = new AttentionDetector(this::onUserAttention, mLock);
         mFaceDownDetector = new FaceDownDetector(this::onFlip);
+        mScreenUndimDetector = new ScreenUndimDetector();
 
         mBatterySavingStats = new BatterySavingStats(mLock);
         mBatterySaverPolicy =
@@ -1140,7 +1149,7 @@ public final class PowerManagerService extends SystemService
             mBatteryStats = BatteryStatsService.getService();
             mNotifier = mInjector.createNotifier(Looper.getMainLooper(), mContext, mBatteryStats,
                     mInjector.createSuspendBlocker(this, "PowerManagerService.Broadcasts"),
-                    mPolicy, mFaceDownDetector);
+                    mPolicy, mFaceDownDetector, mScreenUndimDetector);
 
             mWirelessChargerDetector = mInjector.createWirelessChargerDetector(sensorManager,
                     mInjector.createSuspendBlocker(
@@ -1175,6 +1184,7 @@ public final class PowerManagerService extends SystemService
         mBatterySaverController.systemReady();
         mBatterySaverPolicy.systemReady();
         mFaceDownDetector.systemReady(mContext);
+        mScreenUndimDetector.systemReady(mContext);
 
         // Register for settings changes.
         resolver.registerContentObserver(Settings.Secure.getUriFor(
@@ -1344,7 +1354,8 @@ public final class PowerManagerService extends SystemService
         mDirty |= DIRTY_SETTINGS;
     }
 
-    private void handleSettingsChangedLocked() {
+    @VisibleForTesting
+    void handleSettingsChangedLocked() {
         updateSettingsLocked();
         updatePowerStateLocked();
     }
@@ -1489,7 +1500,11 @@ public final class PowerManagerService extends SystemService
                 mRequestWaitForNegativeProximity = true;
             }
 
-            wakeLock.mLock.unlinkToDeath(wakeLock, 0);
+            try {
+                wakeLock.mLock.unlinkToDeath(wakeLock, 0);
+            } catch (NoSuchElementException e) {
+                Slog.wtf(TAG, "Failed to unlink wakelock", e);
+            }
             removeWakeLockLocked(wakeLock, index);
         }
     }
@@ -2651,9 +2666,6 @@ public final class PowerManagerService extends SystemService
 
     private void updateAttentiveStateLocked(long now, int dirty) {
         long attentiveTimeout = getAttentiveTimeoutLocked();
-        if (attentiveTimeout < 0) {
-            return;
-        }
         // Attentive state only applies to the default display group.
         long goToSleepTime = mDisplayGroupPowerStateMapper.getLastUserActivityTimeLocked(
                 Display.DEFAULT_DISPLAY_GROUP) + attentiveTimeout;
@@ -2661,10 +2673,10 @@ public final class PowerManagerService extends SystemService
 
         boolean warningDismissed = maybeHideInattentiveSleepWarningLocked(now, showWarningTime);
 
-        if (warningDismissed ||
-                (dirty & (DIRTY_ATTENTIVE | DIRTY_STAY_ON | DIRTY_SCREEN_BRIGHTNESS_BOOST
-                        | DIRTY_PROXIMITY_POSITIVE | DIRTY_WAKEFULNESS | DIRTY_BOOT_COMPLETED
-                        | DIRTY_SETTINGS)) != 0) {
+        if (attentiveTimeout >= 0 && (warningDismissed
+                || (dirty & (DIRTY_ATTENTIVE | DIRTY_STAY_ON | DIRTY_SCREEN_BRIGHTNESS_BOOST
+                | DIRTY_PROXIMITY_POSITIVE | DIRTY_WAKEFULNESS | DIRTY_BOOT_COMPLETED
+                | DIRTY_SETTINGS)) != 0)) {
             if (DEBUG_SPEW) {
                 Slog.d(TAG, "Updating attentive state");
             }
@@ -3182,6 +3194,7 @@ public final class PowerManagerService extends SystemService
 
                 final boolean ready = mDisplayManagerInternal.requestPowerState(groupId,
                         displayPowerRequest, mRequestWaitForNegativeProximity);
+                mNotifier.onScreenPolicyUpdate(displayPowerRequest.policy);
 
                 if (DEBUG_SPEW) {
                     Slog.d(TAG, "updateDisplayPowerStateLocked: displayReady=" + ready
@@ -3315,6 +3328,7 @@ public final class PowerManagerService extends SystemService
         public void onProximityNegative() {
             synchronized (mLock) {
                 mProximityPositive = false;
+                mInterceptedPowerKeyForProximity = false;
                 mDirty |= DIRTY_PROXIMITY_POSITIVE;
                 userActivityNoUpdateLocked(Display.DEFAULT_DISPLAY_GROUP, mClock.uptimeMillis(),
                         PowerManager.USER_ACTIVITY_EVENT_OTHER, 0, Process.SYSTEM_UID);
@@ -4155,6 +4169,8 @@ public final class PowerManagerService extends SystemService
             }
             pw.println();
             pw.println("  mRequestWaitForNegativeProximity=" + mRequestWaitForNegativeProximity);
+            pw.println("  mInterceptedPowerKeyForProximity="
+                    + mInterceptedPowerKeyForProximity);
             pw.println("  mSandmanScheduled=" + mSandmanScheduled);
             pw.println("  mBatteryLevelLow=" + mBatteryLevelLow);
             pw.println("  mLightDeviceIdleMode=" + mLightDeviceIdleMode);
@@ -5986,8 +6002,9 @@ public final class PowerManagerService extends SystemService
             final DisplayPowerRequest displayPowerRequest =
                     mDisplayGroupPowerStateMapper.getPowerRequestLocked(
                             Display.DEFAULT_DISPLAY_GROUP);
-            if (displayPowerRequest.useProximitySensor && mProximityPositive) {
+            if (mProximityPositive && !mInterceptedPowerKeyForProximity) {
                 mDisplayManagerInternal.ignoreProximitySensorUntilChanged();
+                mInterceptedPowerKeyForProximity = true;
                 return true;
             }
         }

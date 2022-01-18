@@ -77,6 +77,7 @@
     <string name="compat_mode_on" msgid="4963711187149440884">"Powiększ, aby wypełnić ekran"</string>
     <string name="compat_mode_off" msgid="7682459748279487945">"Rozciągnij, aby wypełnić ekran"</string>
     <string name="global_action_screenshot" msgid="2760267567509131654">"Zrzut ekranu"</string>
+    <string name="global_action_smart_lock_disabled" msgid="9097102067802412936">"Wyłączono Smart Lock"</string>
     <string name="remote_input_image_insertion_text" msgid="4850791636452521123">"wysłano obraz"</string>
     <string name="screenshot_saving_ticker" msgid="6519186952674544916">"Zapisywanie zrzutu ekranu..."</string>
     <string name="screenshot_saving_title" msgid="2298349784913287333">"Zapisywanie zrzutu ekranu..."</string>
@@ -184,6 +185,8 @@
     <string name="fingerprint_dialog_use_fingerprint_instead" msgid="6178228876763024452">"Nie rozpoznaję twarzy. Użyj odcisku palca."</string>
     <string name="fingerprint_dialog_use_fingerprint" msgid="923777032861374285">"Użyj odcisku palca, aby kontynuować"</string>
     <string name="fingerprint_dialog_cant_recognize_fp_use_screenlock" msgid="4805522676254378353">"Nie rozpoznaję odcisku palca. Użyj blokady ekranu."</string>
+    <!-- no translation found for keyguard_face_failed_use_fp (7140293906176164263) -->
+    <skip />
     <string name="face_dialog_looking_for_face" msgid="2656848512116189509">"Szukam Cię…"</string>
     <string name="accessibility_face_dialog_face_icon" msgid="8335095612223716768">"Ikona twarzy"</string>
     <string name="accessibility_compatibility_zoom_button" msgid="5845799798708790509">"Przycisk powiększenia na potrzeby zgodności."</string>
@@ -436,9 +439,7 @@
     <string name="sensor_privacy_start_use_mic_dialog_content" msgid="1624701280680913717">"Spowoduje to odblokowanie dostępu dla wszystkich aplikacji i usług, które mają uprawnienia do korzystania z mikrofonu."</string>
     <string name="sensor_privacy_start_use_camera_dialog_content" msgid="4704948062372435963">"Spowoduje to odblokowanie dostępu dla wszystkich aplikacji i usług, które mają uprawnienia do korzystania z aparatu."</string>
     <string name="sensor_privacy_start_use_mic_camera_dialog_content" msgid="3577642558418404919">"Spowoduje to odblokowanie dostępu dla wszystkich aplikacji i usług, które mają uprawnienia do korzystania z aparatu lub mikrofonu."</string>
-    <string name="media_seamless_remote_device" msgid="177033467332920464">"Urządzenie"</string>
-    <string name="recents_swipe_up_onboarding" msgid="2820265886420993995">"Przesuń w górę, by przełączyć aplikacje"</string>
-    <string name="recents_quick_scrub_onboarding" msgid="765934300283514912">"Szybko przeciągnij w prawo, by przełączyć aplikacje"</string>
+    <string name="media_seamless_other_device" msgid="4654849800789196737">"Inne urządzenie"</string>
     <string name="quick_step_accessibility_toggle_overview" msgid="7908949976727578403">"Przełącz Przegląd"</string>
     <string name="expanded_header_battery_charged" msgid="5307907517976548448">"Naładowana"</string>
     <string name="expanded_header_battery_charging" msgid="1717522253171025549">"Ładowanie"</string>
@@ -458,6 +459,7 @@
     <string name="notification_tap_again" msgid="4477318164947497249">"Kliknij ponownie, by otworzyć"</string>
     <string name="tap_again" msgid="1315420114387908655">"Kliknij jeszcze raz"</string>
     <string name="keyguard_unlock" msgid="8031975796351361601">"Przesuń w górę, by otworzyć"</string>
+    <string name="keyguard_unlock_press" msgid="8488350566398524740">"Naciśnij, by otworzyć"</string>
     <string name="keyguard_retry" msgid="886802522584053523">"Przesuń w górę, by spróbować ponownie"</string>
     <string name="require_unlock_for_nfc" msgid="1305686454823018831">"Odblokuj, by użyć komunikacji NFC"</string>
     <string name="do_disclosure_generic" msgid="4896482821974707167">"To urządzenie należy do Twojej organizacji"</string>
@@ -675,9 +677,8 @@
     <string name="wallet_empty_state_label" msgid="7776761245237530394">"Skonfiguruj formę płatności, aby szybciej i bezpieczniej płacić telefonem za zakupy"</string>
     <string name="wallet_app_button_label" msgid="7123784239111190992">"Pokaż wszystko"</string>
     <string name="wallet_action_button_label_unlock" msgid="8663239748726774487">"Odblokuj, aby zapłacić"</string>
-    <string name="wallet_secondary_label_no_card" msgid="1282609666895946317">"Nie skonfigurowano"</string>
-    <!-- no translation found for wallet_secondary_label_updating (5726130686114928551) -->
-    <skip />
+    <string name="wallet_secondary_label_no_card" msgid="530725155985223497">"Dodaj kartę"</string>
+    <string name="wallet_secondary_label_updating" msgid="5726130686114928551">"Aktualizuję"</string>
     <string name="wallet_secondary_label_device_locked" msgid="5175862019125370506">"Odblokuj, aby użyć"</string>
     <string name="wallet_error_generic" msgid="257704570182963611">"Podczas pobierania kart wystąpił problem. Spróbuj ponownie później."</string>
     <string name="wallet_lockscreen_settings_label" msgid="3539105300870383570">"Ustawienia ekranu blokady"</string>
@@ -715,6 +716,7 @@
     <string name="tuner_full_importance_settings" msgid="1388025816553459059">"Zaawansowane ustawienia powiadomień"</string>
     <string name="tuner_full_importance_settings_on" msgid="917981436602311547">"Wł."</string>
     <string name="tuner_full_importance_settings_off" msgid="5580102038749680829">"Wył."</string>
+    <string name="rotation_lock_camera_rotation_on" msgid="789434807790534274">"Włączono – na podstawie twarzy"</string>
     <string name="power_notification_controls_description" msgid="1334963837572708952">"Dzięki zaawansowanym ustawieniom możesz określić poziom ważności powiadomień z aplikacji w skali od 0 do 5. \n\n"<b>"Poziom 5"</b>" \n– Pokazuj u góry listy powiadomień \n– Zezwalaj na powiadomienia na pełnym ekranie \n– Zawsze pokazuj podgląd \n\n"<b>"Poziom 4"</b>" \n– Wyłącz powiadomienia na pełnym ekranie \n– Zawsze pokazuj podgląd \n\n"<b>"Poziom 3"</b>" \n– Wyłącz powiadomienia na pełnym ekranie \n– Nigdy nie pokazuj podglądu \n\n"<b>"Poziom 2"</b>" \n– Wyłącz powiadomienia na pełnym ekranie \n– Nigdy nie pokazuj podglądu \n– NIgdy nie powiadamiaj dźwiękiem ani wibracjami \n\n"<b>"Poziom 1"</b>" \n– Wyłącz powiadomienia na pełnym ekranie \n– Nigdy nie pokazuj podglądu \n– NIgdy nie powiadamiaj dźwiękiem ani wibracjami \n– Ukrywaj na ekranie blokady i pasku stanu \n– Pokazuj u dołu listy powiadomień \n\n"<b>"Poziom 0"</b>" \n– Blokuj wszystkie powiadomienia aplikacji"</string>
     <string name="notification_header_default_channel" msgid="225454696914642444">"Powiadomienia"</string>
     <string name="notification_channel_disabled" msgid="928065923928416337">"Te powiadomienia nie będą już wyświetlane"</string>
@@ -749,10 +751,10 @@
     <string name="notification_channel_summary_automatic_silenced" msgid="7403004439649872047">"&lt;b&gt;Stan:&lt;/b&gt; zmieniono na Ciche"</string>
     <string name="notification_channel_summary_automatic_promoted" msgid="1301710305149590426">"&lt;b&gt;Stan:&lt;/b&gt; podniesiono ważność"</string>
     <string name="notification_channel_summary_automatic_demoted" msgid="1831303964660807700">"&lt;b&gt;Stan:&lt;/b&gt; obniżono ważność"</string>
-    <string name="notification_channel_summary_priority_baseline" msgid="46674690072551234">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekran blokady"</string>
-    <string name="notification_channel_summary_priority_bubble" msgid="1275413109619074576">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekran blokady, jako dymek"</string>
-    <string name="notification_channel_summary_priority_dnd" msgid="6665395023264154361">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekran blokady, przerywa działanie trybu Nie przeszkadzać"</string>
-    <string name="notification_channel_summary_priority_all" msgid="7151752959650048285">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekran blokady, jako dymek, przerywa działanie trybu Nie przeszkadzać"</string>
+    <string name="notification_channel_summary_priority_baseline" msgid="46674690072551234">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekranie blokady"</string>
+    <string name="notification_channel_summary_priority_bubble" msgid="1275413109619074576">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekranie blokady, jako dymek"</string>
+    <string name="notification_channel_summary_priority_dnd" msgid="6665395023264154361">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekranie blokady, przerywa działanie trybu Nie przeszkadzać"</string>
+    <string name="notification_channel_summary_priority_all" msgid="7151752959650048285">"Wyświetla się u góry powiadomień w rozmowach oraz jako zdjęcie profilowe na ekranie blokady, jako dymek, przerywa działanie trybu Nie przeszkadzać"</string>
     <string name="notification_conversation_channel_settings" msgid="2409977688430606835">"Ustawienia"</string>
     <string name="notification_priority_title" msgid="2079708866333537093">"Priorytetowe"</string>
     <string name="no_shortcut" msgid="8257177117568230126">"Aplikacja <xliff:g id="APP_NAME">%1$s</xliff:g> nie obsługuje funkcji rozmów"</string>
@@ -1018,8 +1020,8 @@
     <string name="ongoing_privacy_chip_content_multiple_apps" msgid="8341216022442383954">"Aplikacje używają: <xliff:g id="TYPES_LIST">%s</xliff:g>."</string>
     <string name="ongoing_privacy_dialog_separator" msgid="1866222499727706187">", "</string>
     <string name="ongoing_privacy_dialog_last_separator" msgid="5615876114268009767">" i "</string>
-    <string name="ongoing_privacy_dialog_using_op" msgid="426635338010011796">"Używa tego aplikacja <xliff:g id="APPLICATION_NAME">%1$s</xliff:g>"</string>
-    <string name="ongoing_privacy_dialog_recent_op" msgid="2736290123662790026">"Ostatnio używała tego aplikacja <xliff:g id="APPLICATION_NAME">%1$s</xliff:g>"</string>
+    <string name="ongoing_privacy_dialog_using_op" msgid="426635338010011796">"Używane przez aplikację <xliff:g id="APPLICATION_NAME">%1$s</xliff:g>"</string>
+    <string name="ongoing_privacy_dialog_recent_op" msgid="2736290123662790026">"Ostatnio używane przez aplikację <xliff:g id="APPLICATION_NAME">%1$s</xliff:g>"</string>
     <string name="ongoing_privacy_dialog_enterprise" msgid="3003314125311966061">"(praca)"</string>
     <string name="ongoing_privacy_dialog_phonecall" msgid="4487370562589839298">"Rozmowa telefoniczna"</string>
     <string name="ongoing_privacy_dialog_attribution_text" msgid="4738795925380373994">"(przez: <xliff:g id="APPLICATION_NAME_S_">%s</xliff:g>)"</string>
@@ -1055,7 +1057,7 @@
     <string name="accessibility_floating_button_action_move_to_edge_and_hide_to_half" msgid="662401168245782658">"Przenieś do krawędzi i ukryj"</string>
     <string name="accessibility_floating_button_action_move_out_edge_and_show" msgid="8354760891651663326">"Przenieś poza krawędź i pokaż"</string>
     <string name="accessibility_floating_button_action_double_tap_to_toggle" msgid="7976492639670692037">"przełącz"</string>
-    <string name="quick_controls_title" msgid="7095074621086860062">"Sterowanie domem"</string>
+    <string name="quick_controls_title" msgid="6839108006171302273">"Sterowanie urządzeniami"</string>
     <string name="controls_providers_title" msgid="6879775889857085056">"Wybierz aplikację, do której chcesz dodać elementy sterujące"</string>
     <plurals name="controls_number_of_favorites" formatted="false" msgid="1057347832073807380">
       <item quantity="few">Dodano <xliff:g id="NUMBER_1">%s</xliff:g> elementy sterujące</item>
@@ -1159,8 +1161,10 @@
     <string name="people_tile_description" msgid="8154966188085545556">"Zobacz ostatnie wiadomości, nieodebrane połączenia i stany"</string>
     <string name="people_tile_title" msgid="6589377493334871272">"Rozmowa"</string>
     <string name="paused_by_dnd" msgid="7856941866433556428">"Wstrzymane przez tryb Nie przeszkadzać"</string>
-    <string name="new_notification_text_content_description" msgid="5574393603145263727">"<xliff:g id="NAME">%1$s</xliff:g> wysyła wiadomość"</string>
+    <string name="new_notification_text_content_description" msgid="2915029960094389291">"<xliff:g id="NAME">%1$s</xliff:g> wysyła wiadomość: <xliff:g id="NOTIFICATION">%2$s</xliff:g>"</string>
     <string name="new_notification_image_content_description" msgid="6017506886810813123">"<xliff:g id="NAME">%1$s</xliff:g> wysyła zdjęcie"</string>
+    <string name="new_status_content_description" msgid="6046637888641308327">"<xliff:g id="NAME">%1$s</xliff:g> ma nowy stan: <xliff:g id="STATUS">%2$s</xliff:g>"</string>
+    <string name="person_available" msgid="2318599327472755472">"Użytkownik dostępny"</string>
     <string name="battery_state_unknown_notification_title" msgid="8464703640483773454">"Problem z odczytaniem pomiaru wykorzystania baterii"</string>
     <string name="battery_state_unknown_notification_text" msgid="13720937839460899">"Kliknij, aby uzyskać więcej informacji"</string>
     <string name="qs_alarm_tile_no_alarm" msgid="4826472008616807923">"Nie ustawiono alarmu"</string>
@@ -1171,4 +1175,21 @@
     <string name="keyguard_try_fingerprint" msgid="2825130772993061165">"By otworzyć, użyj odcisku palca"</string>
     <string name="accessibility_fingerprint_bouncer" msgid="7189102492498735519">"Wymagane uwierzytelnienie. Dotknij czytnika liniii papilarnych, by uwierzytelnić."</string>
     <string name="ongoing_phone_call_content_description" msgid="5332334388483099947">"Aktywne połączenie"</string>
+    <string name="mobile_data_settings_title" msgid="3955246641380064901">"Mobilna transmisja danych"</string>
+    <string name="preference_summary_default_combination" msgid="8453246369903749670">"<xliff:g id="STATE">%1$s</xliff:g>/<xliff:g id="NETWORKMODE">%2$s</xliff:g>"</string>
+    <string name="mobile_data_connection_active" msgid="944490013299018227">"Połączono"</string>
+    <string name="mobile_data_off_summary" msgid="3663995422004150567">"Mobilna transmisja danych nie połączy się automatycznie"</string>
+    <string name="mobile_data_no_connection" msgid="1713872434869947377">"Brak połączenia"</string>
+    <string name="non_carrier_network_unavailable" msgid="770049357024492372">"Brak innych dostępnych sieci"</string>
+    <string name="all_network_unavailable" msgid="4112774339909373349">"Brak dostępnych sieci"</string>
+    <string name="turn_on_wifi" msgid="1308379840799281023">"Wi‑Fi"</string>
+    <string name="pref_title_network_details" msgid="1639455355897668883">"Szczegóły sieci"</string>
+    <string name="tap_a_network_to_connect" msgid="1565073330852369558">"Kliknij sieć, aby połączyć"</string>
+    <string name="unlock_to_view_networks" msgid="5072880496312015676">"Odblokuj, by wyświetlić sieci"</string>
+    <string name="wifi_empty_list_wifi_on" msgid="3864376632067585377">"Szukam sieci…"</string>
+    <string name="wifi_failed_connect_message" msgid="4161863112079000071">"Nie udało się połączyć z siecią"</string>
+    <string name="wifi_wont_autoconnect_for_now" msgid="5782282612749867762">"Wi-Fi nie będzie na razie włączać się automatycznie"</string>
+    <string name="see_all_networks" msgid="3773666844913168122">"Pokaż wszystko"</string>
+    <string name="to_switch_networks_disconnect_ethernet" msgid="6698111101156951955">"Aby przełączać sieci, odłącz Ethernet"</string>
+    <string name="wifi_scan_notify_message" msgid="3753839537448621794">"Aby zapewnić Ci większy komfort korzystania z urządzenia, aplikacje i usługi mogą nadal wyszukiwać sieci Wi-Fi w pobliżu nawet wtedy, gdy Wi-Fi jest wyłączone. Możesz to zmienić w ustawieniach skanowania Wi-Fi. "<annotation id="link">"Zmień"</annotation></string>
 </resources>

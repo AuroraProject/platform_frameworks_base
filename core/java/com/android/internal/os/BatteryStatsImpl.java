@@ -275,7 +275,7 @@ public class BatteryStatsImpl extends BatteryStats {
     private int mNumAllUidCpuTimeReads;
 
     /** Container for Resource Power Manager stats. Updated by updateRpmStatsLocked. */
-    private final RpmStats mTmpRpmStats = new RpmStats();
+    private RpmStats mTmpRpmStats = null;
     /** The soonest the RPM stats can be updated after it was last updated. */
     private static final long RPM_STATS_UPDATE_FREQ_MS = 1000;
     /** Last time that RPM stats were updated by updateRpmStatsLocked. */
@@ -707,6 +707,10 @@ public class BatteryStatsImpl extends BatteryStats {
      * Mapping isolated uids to the actual owning app uid.
      */
     final SparseIntArray mIsolatedUids = new SparseIntArray();
+    /**
+     * Internal reference count of isolated uids.
+     */
+    final SparseIntArray mIsolatedUidRefCounts = new SparseIntArray();
 
     /**
      * The statistics we have collected organized by uids.
@@ -1106,8 +1110,9 @@ public class BatteryStatsImpl extends BatteryStats {
     @VisibleForTesting
     protected PowerProfile mPowerProfile;
 
+    @VisibleForTesting
     @GuardedBy("this")
-    final Constants mConstants;
+    protected final Constants mConstants;
 
     /*
      * Holds a SamplingTimer associated with each Resource Power Manager state and voter,
@@ -3896,6 +3901,7 @@ public class BatteryStatsImpl extends BatteryStats {
     public void addIsolatedUidLocked(int isolatedUid, int appUid,
             long elapsedRealtimeMs, long uptimeMs) {
         mIsolatedUids.put(isolatedUid, appUid);
+        mIsolatedUidRefCounts.put(isolatedUid, 1);
         final Uid u = getUidStatsLocked(appUid, elapsedRealtimeMs, uptimeMs);
         u.addIsolatedUid(isolatedUid);
     }
@@ -3914,19 +3920,51 @@ public class BatteryStatsImpl extends BatteryStats {
     }
 
     /**
-     * This should only be called after the cpu times have been read.
+     * Isolated uid should only be removed after all wakelocks associated with the uid are stopped
+     * and the cpu time-in-state has been read one last time for the uid.
+     *
      * @see #scheduleRemoveIsolatedUidLocked(int, int)
+     *
+     * @return true if the isolated uid is actually removed.
      */
     @GuardedBy("this")
-    public void removeIsolatedUidLocked(int isolatedUid, long elapsedRealtimeMs, long uptimeMs) {
+    public boolean maybeRemoveIsolatedUidLocked(int isolatedUid, long elapsedRealtimeMs,
+            long uptimeMs) {
+        final int refCount = mIsolatedUidRefCounts.get(isolatedUid, 0) - 1;
+        if (refCount > 0) {
+            // Isolated uid is still being tracked
+            mIsolatedUidRefCounts.put(isolatedUid, refCount);
+            return false;
+        }
+
         final int idx = mIsolatedUids.indexOfKey(isolatedUid);
         if (idx >= 0) {
             final int ownerUid = mIsolatedUids.valueAt(idx);
             final Uid u = getUidStatsLocked(ownerUid, elapsedRealtimeMs, uptimeMs);
             u.removeIsolatedUid(isolatedUid);
             mIsolatedUids.removeAt(idx);
+            mIsolatedUidRefCounts.delete(isolatedUid);
+        } else {
+            Slog.w(TAG, "Attempted to remove untracked isolated uid (" + isolatedUid + ")");
         }
         mPendingRemovedUids.add(new UidToRemove(isolatedUid, elapsedRealtimeMs));
+
+        return true;
+    }
+
+    /**
+     * Increment the ref count for an isolated uid.
+     * call #maybeRemoveIsolatedUidLocked to decrement.
+     */
+    public void incrementIsolatedUidRefCount(int uid) {
+        final int refCount = mIsolatedUidRefCounts.get(uid, 0);
+        if (refCount <= 0) {
+            // Uid is not mapped or referenced
+            Slog.w(TAG,
+                    "Attempted to increment ref counted of untracked isolated uid (" + uid + ")");
+            return;
+        }
+        mIsolatedUidRefCounts.put(uid, refCount + 1);
     }
 
     public int mapUid(int uid) {
@@ -4286,7 +4324,7 @@ public class BatteryStatsImpl extends BatteryStats {
 
     public void noteStartWakeLocked(int uid, int pid, WorkChain wc, String name, String historyName,
             int type, boolean unimportantForLogging, long elapsedRealtimeMs, long uptimeMs) {
-        uid = mapUid(uid);
+        final int mappedUid = mapUid(uid);
         if (type == WAKE_TYPE_PARTIAL) {
             // Only care about partial wake locks, since full wake locks
             // will be canceled when the user puts the screen to sleep.
@@ -4296,9 +4334,9 @@ public class BatteryStatsImpl extends BatteryStats {
             }
             if (mRecordAllHistory) {
                 if (mActiveEvents.updateState(HistoryItem.EVENT_WAKE_LOCK_START, historyName,
-                        uid, 0)) {
+                        mappedUid, 0)) {
                     addHistoryEventLocked(elapsedRealtimeMs, uptimeMs,
-                            HistoryItem.EVENT_WAKE_LOCK_START, historyName, uid);
+                            HistoryItem.EVENT_WAKE_LOCK_START, historyName, mappedUid);
                 }
             }
             if (mWakeLockNesting == 0) {
@@ -4307,7 +4345,7 @@ public class BatteryStatsImpl extends BatteryStats {
                         + Integer.toHexString(mHistoryCur.states));
                 mHistoryCur.wakelockTag = mHistoryCur.localWakelockTag;
                 mHistoryCur.wakelockTag.string = mInitialAcquireWakeName = historyName;
-                mHistoryCur.wakelockTag.uid = mInitialAcquireWakeUid = uid;
+                mHistoryCur.wakelockTag.uid = mInitialAcquireWakeUid = mappedUid;
                 mWakeLockImportant = !unimportantForLogging;
                 addHistoryRecordLocked(elapsedRealtimeMs, uptimeMs);
             } else if (!mWakeLockImportant && !unimportantForLogging
@@ -4317,14 +4355,19 @@ public class BatteryStatsImpl extends BatteryStats {
                     mHistoryLastWritten.wakelockTag = null;
                     mHistoryCur.wakelockTag = mHistoryCur.localWakelockTag;
                     mHistoryCur.wakelockTag.string = mInitialAcquireWakeName = historyName;
-                    mHistoryCur.wakelockTag.uid = mInitialAcquireWakeUid = uid;
+                    mHistoryCur.wakelockTag.uid = mInitialAcquireWakeUid = mappedUid;
                     addHistoryRecordLocked(elapsedRealtimeMs, uptimeMs);
                 }
                 mWakeLockImportant = true;
             }
             mWakeLockNesting++;
         }
-        if (uid >= 0) {
+        if (mappedUid >= 0) {
+            if (mappedUid != uid) {
+                // Prevent the isolated uid mapping from being removed while the wakelock is
+                // being held.
+                incrementIsolatedUidRefCount(uid);
+            }
             if (mOnBatteryScreenOffTimeBase.isRunning()) {
                 // We only update the cpu time when a wake lock is acquired if the screen is off.
                 // If the screen is on, we don't distribute the power amongst partial wakelocks.
@@ -4334,7 +4377,7 @@ public class BatteryStatsImpl extends BatteryStats {
                 requestWakelockCpuUpdate();
             }
 
-            getUidStatsLocked(uid, elapsedRealtimeMs, uptimeMs)
+            getUidStatsLocked(mappedUid, elapsedRealtimeMs, uptimeMs)
                     .noteStartWakeLocked(pid, name, type, elapsedRealtimeMs);
 
             if (wc != null) {
@@ -4342,8 +4385,8 @@ public class BatteryStatsImpl extends BatteryStats {
                         wc.getTags(), getPowerManagerWakeLockLevel(type), name,
                         FrameworkStatsLog.WAKELOCK_STATE_CHANGED__STATE__ACQUIRE);
             } else {
-                FrameworkStatsLog.write_non_chained(FrameworkStatsLog.WAKELOCK_STATE_CHANGED, uid,
-                        null, getPowerManagerWakeLockLevel(type), name,
+                FrameworkStatsLog.write_non_chained(FrameworkStatsLog.WAKELOCK_STATE_CHANGED,
+                        mappedUid, null, getPowerManagerWakeLockLevel(type), name,
                         FrameworkStatsLog.WAKELOCK_STATE_CHANGED__STATE__ACQUIRE);
             }
         }
@@ -4357,7 +4400,7 @@ public class BatteryStatsImpl extends BatteryStats {
 
     public void noteStopWakeLocked(int uid, int pid, WorkChain wc, String name, String historyName,
             int type, long elapsedRealtimeMs, long uptimeMs) {
-        uid = mapUid(uid);
+        final int mappedUid = mapUid(uid);
         if (type == WAKE_TYPE_PARTIAL) {
             mWakeLockNesting--;
             if (mRecordAllHistory) {
@@ -4365,9 +4408,9 @@ public class BatteryStatsImpl extends BatteryStats {
                     historyName = name;
                 }
                 if (mActiveEvents.updateState(HistoryItem.EVENT_WAKE_LOCK_FINISH, historyName,
-                        uid, 0)) {
+                        mappedUid, 0)) {
                     addHistoryEventLocked(elapsedRealtimeMs, uptimeMs,
-                            HistoryItem.EVENT_WAKE_LOCK_FINISH, historyName, uid);
+                            HistoryItem.EVENT_WAKE_LOCK_FINISH, historyName, mappedUid);
                 }
             }
             if (mWakeLockNesting == 0) {
@@ -4379,7 +4422,7 @@ public class BatteryStatsImpl extends BatteryStats {
                 addHistoryRecordLocked(elapsedRealtimeMs, uptimeMs);
             }
         }
-        if (uid >= 0) {
+        if (mappedUid >= 0) {
             if (mOnBatteryScreenOffTimeBase.isRunning()) {
                 if (DEBUG_ENERGY_CPU) {
                     Slog.d(TAG, "Updating cpu time because of -wake_lock");
@@ -4387,16 +4430,21 @@ public class BatteryStatsImpl extends BatteryStats {
                 requestWakelockCpuUpdate();
             }
 
-            getUidStatsLocked(uid, elapsedRealtimeMs, uptimeMs)
+            getUidStatsLocked(mappedUid, elapsedRealtimeMs, uptimeMs)
                     .noteStopWakeLocked(pid, name, type, elapsedRealtimeMs);
             if (wc != null) {
                 FrameworkStatsLog.write(FrameworkStatsLog.WAKELOCK_STATE_CHANGED, wc.getUids(),
                         wc.getTags(), getPowerManagerWakeLockLevel(type), name,
                         FrameworkStatsLog.WAKELOCK_STATE_CHANGED__STATE__RELEASE);
             } else {
-                FrameworkStatsLog.write_non_chained(FrameworkStatsLog.WAKELOCK_STATE_CHANGED, uid,
-                        null, getPowerManagerWakeLockLevel(type), name,
+                FrameworkStatsLog.write_non_chained(FrameworkStatsLog.WAKELOCK_STATE_CHANGED,
+                        mappedUid, null, getPowerManagerWakeLockLevel(type), name,
                         FrameworkStatsLog.WAKELOCK_STATE_CHANGED__STATE__RELEASE);
+            }
+
+            if (mappedUid != uid) {
+                // Decrement the ref count for the isolated uid and delete the mapping if uneeded.
+                maybeRemoveIsolatedUidLocked(uid, elapsedRealtimeMs, uptimeMs);
             }
         }
     }
@@ -8570,7 +8618,7 @@ public class BatteryStatsImpl extends BatteryStats {
          * inactive so can be dropped.
          */
         @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-        public boolean reset(long uptimeUs, long realtimeUs) {
+        public boolean reset(long uptimeUs, long realtimeUs, int resetReason) {
             boolean active = false;
 
             mOnBatteryBackgroundTimeBase.init(uptimeUs, realtimeUs);
@@ -8640,7 +8688,11 @@ public class BatteryStatsImpl extends BatteryStats {
             resetIfNotNull(mBluetoothControllerActivity, false, realtimeUs);
             resetIfNotNull(mModemControllerActivity, false, realtimeUs);
 
-            MeasuredEnergyStats.resetIfNotNull(mUidMeasuredEnergyStats);
+            if (resetReason == RESET_REASON_MEASURED_ENERGY_BUCKETS_CHANGE) {
+                mUidMeasuredEnergyStats = null;
+            } else {
+                MeasuredEnergyStats.resetIfNotNull(mUidMeasuredEnergyStats);
+            }
 
             resetIfNotNull(mUserCpuTime, false, realtimeUs);
             resetIfNotNull(mSystemCpuTime, false, realtimeUs);
@@ -11323,7 +11375,7 @@ public class BatteryStatsImpl extends BatteryStats {
         mNumConnectivityChange = 0;
 
         for (int i=0; i<mUidStats.size(); i++) {
-            if (mUidStats.valueAt(i).reset(uptimeUs, elapsedRealtimeUs)) {
+            if (mUidStats.valueAt(i).reset(uptimeUs, elapsedRealtimeUs, resetReason)) {
                 mUidStats.valueAt(i).detachFromTimeBase();
                 mUidStats.remove(mUidStats.keyAt(i));
                 i--;
@@ -12387,19 +12439,34 @@ public class BatteryStatsImpl extends BatteryStats {
 
         mLastBluetoothActivityInfo.set(info);
     }
-
     /**
-     * Read and record Resource Power Manager (RPM) state and voter times.
+     * Read Resource Power Manager (RPM) state and voter times.
      * If RPM stats were fetched more recently than RPM_STATS_UPDATE_FREQ_MS ago, uses the old data
      * instead of fetching it anew.
+     *
+     * Note: This should be called without synchronizing this BatteryStatsImpl object
      */
-    public void updateRpmStatsLocked(long elapsedRealtimeUs) {
+    public void fillLowPowerStats() {
         if (mPlatformIdleStateCallback == null) return;
+
+        RpmStats rpmStats = new RpmStats();
         long now = SystemClock.elapsedRealtime();
         if (now - mLastRpmStatsUpdateTimeMs >= RPM_STATS_UPDATE_FREQ_MS) {
-            mPlatformIdleStateCallback.fillLowPowerStats(mTmpRpmStats);
-            mLastRpmStatsUpdateTimeMs = now;
+            mPlatformIdleStateCallback.fillLowPowerStats(rpmStats);
+            synchronized (this) {
+                mTmpRpmStats = rpmStats;
+                mLastRpmStatsUpdateTimeMs = now;
+            }
         }
+    }
+
+    /**
+     * Record Resource Power Manager (RPM) state and voter times.
+     * TODO(b/185252376): Remove this logging. PowerStatsService logs the same data more
+     * efficiently.
+     */
+    public void updateRpmStatsLocked(long elapsedRealtimeUs) {
+        if (mTmpRpmStats == null) return;
 
         for (Map.Entry<String, RpmStats.PowerStatePlatformSleepState> pstate
                 : mTmpRpmStats.mPlatformLowPowerStats.entrySet()) {
@@ -16744,6 +16811,15 @@ public class BatteryStatsImpl extends BatteryStats {
         pw.println(mNumAllUidCpuTimeReads);
         pw.print("UIDs removed since the later of device start or stats reset: ");
         pw.println(mNumUidsRemoved);
+
+        pw.println("Currently mapped isolated uids:");
+        final int numIsolatedUids = mIsolatedUids.size();
+        for (int i = 0; i < numIsolatedUids; i++) {
+            final int isolatedUid = mIsolatedUids.keyAt(i);
+            final int ownerUid = mIsolatedUids.valueAt(i);
+            final int refCount = mIsolatedUidRefCounts.get(isolatedUid);
+            pw.println("  " + isolatedUid + "->" + ownerUid + " (ref count = " + refCount + ")");
+        }
 
         pw.println();
         dumpConstantsLocked(pw);

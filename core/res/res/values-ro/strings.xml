@@ -204,7 +204,6 @@
     <string name="gnss_service" msgid="8907781262179951385">"Serviciul GNSS"</string>
     <string name="sensor_notification_service" msgid="7474531979178682676">"Serviciu pentru notificări de la senzori"</string>
     <string name="twilight_service" msgid="8964898045693187224">"Serviciul Twilight"</string>
-    <string name="offline_location_time_zone_detection_service_attribution" msgid="303754195048744816">"Detector de fus orar (fără conexiune)"</string>
     <string name="gnss_time_update_service" msgid="9039489496037616095">"Serviciul de actualizare a orei bazat pe GNSS"</string>
     <string name="music_recognition_manager_service" msgid="7481956037950276359">"Serviciu de gestionare a recunoașterii de melodii"</string>
     <string name="factory_reset_warning" msgid="6858705527798047809">"Datele de pe dispozitiv vor fi șterse"</string>
@@ -613,6 +612,7 @@
     <string name="fingerprint_or_screen_lock_dialog_default_subtitle" msgid="5195808203117992200">"Folosiți amprenta sau blocarea ecranului pentru a continua"</string>
   <string-array name="fingerprint_error_vendor">
   </string-array>
+    <string name="fingerprint_error_vendor_unknown" msgid="4170002184907291065">"A apărut o eroare. Încercați din nou."</string>
     <string name="fingerprint_icon_content_description" msgid="4741068463175388817">"Pictograma amprentă"</string>
     <string name="face_recalibrate_notification_name" msgid="7311163114750748686">"Deblocare facială"</string>
     <string name="face_recalibrate_notification_title" msgid="2524791952735579082">"Problemă cu Deblocarea facială"</string>
@@ -665,6 +665,7 @@
     <string name="face_or_screen_lock_dialog_default_subtitle" msgid="5006381531158341844">"Folosiți-vă chipul sau blocarea ecranului pentru a continua"</string>
   <string-array name="face_error_vendor">
   </string-array>
+    <string name="face_error_vendor_unknown" msgid="7387005932083302070">"A apărut o eroare. Încercați din nou."</string>
     <string name="face_icon_content_description" msgid="465030547475916280">"Pictograma chip"</string>
     <string name="permlab_readSyncSettings" msgid="6250532864893156277">"citire setări sincronizare"</string>
     <string name="permdesc_readSyncSettings" msgid="1325658466358779298">"Permite aplicației să citească setările de sincronizare ale unui cont. De exemplu, cu această permisiune aplicația poate determina dacă aplicația Persoane este sincronizată cu un anumit cont."</string>
@@ -1503,6 +1504,7 @@
     <string name="deny" msgid="6632259981847676572">"Refuzați"</string>
     <string name="permission_request_notification_title" msgid="1810025922441048273">"Permisiune solicitată"</string>
     <string name="permission_request_notification_with_subtitle" msgid="3743417870360129298">"Permisiune solicitată\npentru contul <xliff:g id="ACCOUNT">%s</xliff:g>."</string>
+    <string name="permission_request_notification_for_app_with_subtitle" msgid="1298704005732851350">"Permisiune solicitată de <xliff:g id="APP">%1$s</xliff:g>\npentru contul <xliff:g id="ACCOUNT">%2$s</xliff:g>."</string>
     <string name="forward_intent_to_owner" msgid="4620359037192871015">"Utilizați această aplicație în afara profilului de serviciu"</string>
     <string name="forward_intent_to_work" msgid="3620262405636021151">"Utilizați această aplicație în profilul de serviciu"</string>
     <string name="input_method_binding_label" msgid="1166731601721983656">"Metodă de intrare"</string>

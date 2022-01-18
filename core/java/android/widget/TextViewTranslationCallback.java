@@ -22,7 +22,6 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.os.Build;
 import android.text.TextUtils;
 import android.text.method.TransformationMethod;
 import android.text.method.TranslationTransformationMethod;
@@ -43,10 +42,7 @@ public class TextViewTranslationCallback implements ViewTranslationCallback {
 
     private static final String TAG = "TextViewTranslationCb";
 
-    // TODO(b/182433547): remove Build.IS_DEBUGGABLE before ship. Enable the logging in debug build
-    //  to help the debug during the development phase
-    private static final boolean DEBUG = Log.isLoggable(UiTranslationManager.LOG_TAG, Log.DEBUG)
-            || Build.IS_DEBUGGABLE;
+    private static final boolean DEBUG = Log.isLoggable(UiTranslationManager.LOG_TAG, Log.DEBUG);
 
     private TranslationTransformationMethod mTranslationTransformation;
     private boolean mIsShowingTranslation = false;
@@ -68,13 +64,24 @@ public class TextViewTranslationCallback implements ViewTranslationCallback {
      */
     @Override
     public boolean onShowTranslation(@NonNull View view) {
+        if (mIsShowingTranslation) {
+            if (DEBUG) {
+                Log.d(TAG, view + " is already showing translated text.");
+            }
+            return false;
+        }
         ViewTranslationResponse response = view.getViewTranslationResponse();
         if (response == null) {
             Log.e(TAG, "onShowTranslation() shouldn't be called before "
                     + "onViewTranslationResponse().");
             return false;
         }
-        if (mTranslationTransformation == null) {
+        // It is possible user changes text and new translation response returns, system should
+        // update the translation response to keep the result up to date.
+        // Because TextView.setTransformationMethod() will skip the same TransformationMethod
+        // instance, we should create a new one to let new translation can work.
+        if (mTranslationTransformation == null
+                || !response.equals(mTranslationTransformation.getViewTranslationResponse())) {
             TransformationMethod originalTranslationMethod =
                     ((TextView) view).getTransformationMethod();
             mTranslationTransformation = new TranslationTransformationMethod(response,
@@ -124,7 +131,6 @@ public class TextViewTranslationCallback implements ViewTranslationCallback {
             }
         } else {
             if (DEBUG) {
-                // TODO(b/182433547): remove before S release
                 Log.w(TAG, "onHideTranslation(): no translated text.");
             }
             return false;
@@ -145,7 +151,6 @@ public class TextViewTranslationCallback implements ViewTranslationCallback {
             mContentDescription = null;
         } else {
             if (DEBUG) {
-                // TODO(b/182433547): remove before S release
                 Log.w(TAG, "onClearTranslation(): no translated text.");
             }
             return false;
@@ -153,7 +158,7 @@ public class TextViewTranslationCallback implements ViewTranslationCallback {
         return true;
     }
 
-    boolean isShowingTranslation() {
+    public boolean isShowingTranslation() {
         return mIsShowingTranslation;
     }
 

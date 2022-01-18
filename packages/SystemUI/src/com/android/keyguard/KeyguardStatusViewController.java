@@ -79,18 +79,6 @@ public class KeyguardStatusViewController extends ViewController<KeyguardStatusV
                 dozeParameters, unlockedScreenOffAnimationController, /* animateYPos= */ true);
         mKeyguardUnlockAnimationController = keyguardUnlockAnimationController;
         mSmartspaceTransitionController = smartspaceTransitionController;
-
-        mKeyguardStateController.addCallback(new KeyguardStateController.Callback() {
-            @Override
-            public void onKeyguardShowingChanged() {
-                // If we explicitly re-show the keyguard, make sure that all the child views are
-                // visible. They might have been animating out as part of the SmartSpace shared
-                // element transition.
-                if (keyguardStateController.isShowing()) {
-                    mView.setChildrenAlphaExcludingClockView(1f);
-                }
-            }
-        });
     }
 
     @Override
@@ -102,12 +90,14 @@ public class KeyguardStatusViewController extends ViewController<KeyguardStatusV
     protected void onViewAttached() {
         mKeyguardUpdateMonitor.registerCallback(mInfoCallback);
         mConfigurationController.addCallback(mConfigurationListener);
+        mKeyguardStateController.addCallback(mKeyguardStateControllerCallback);
     }
 
     @Override
     protected void onViewDetached() {
         mKeyguardUpdateMonitor.removeCallback(mInfoCallback);
         mConfigurationController.removeCallback(mConfigurationListener);
+        mKeyguardStateController.removeCallback(mKeyguardStateControllerCallback);
     }
 
     /**
@@ -195,6 +185,20 @@ public class KeyguardStatusViewController extends ViewController<KeyguardStatusV
     }
 
     /**
+     * Get y-bottom position of the currently visible clock.
+     */
+    public int getClockBottom(int statusBarHeaderHeight) {
+        return mKeyguardClockSwitchController.getClockBottom(statusBarHeaderHeight);
+    }
+
+    /**
+     * @return true if the currently displayed clock is top aligned (as opposed to center aligned)
+     */
+    public boolean isClockTopAligned() {
+        return mKeyguardClockSwitchController.isClockTopAligned();
+    }
+
+    /**
      * Set whether the view accessibility importance mode.
      */
     public void setStatusAccessibilityImportance(int mode) {
@@ -273,6 +277,19 @@ public class KeyguardStatusViewController extends ViewController<KeyguardStatusV
         @Override
         public void onUserSwitchComplete(int userId) {
             mKeyguardClockSwitchController.refreshFormat();
+        }
+    };
+
+    private KeyguardStateController.Callback mKeyguardStateControllerCallback =
+            new KeyguardStateController.Callback() {
+        @Override
+        public void onKeyguardShowingChanged() {
+            // If we explicitly re-show the keyguard, make sure that all the child views are
+            // visible. They might have been animating out as part of the SmartSpace shared
+            // element transition.
+            if (mKeyguardStateController.isShowing()) {
+                mView.setChildrenAlphaExcludingClockView(1f);
+            }
         }
     };
 

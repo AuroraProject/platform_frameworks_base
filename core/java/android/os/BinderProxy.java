@@ -74,7 +74,7 @@ public final class BinderProxy implements IBinder {
         private static final int MAIN_INDEX_SIZE = 1 <<  LOG_MAIN_INDEX_SIZE;
         private static final int MAIN_INDEX_MASK = MAIN_INDEX_SIZE - 1;
         // Debuggable builds will throw an AssertionError if the number of map entries exceeds:
-        private static final int CRASH_AT_SIZE = 20_000;
+        private static final int CRASH_AT_SIZE = 25_000;
 
         /**
          * We next warn when we exceed this bucket size.
@@ -560,6 +560,9 @@ public final class BinderProxy implements IBinder {
             }
         }
 
+        final AppOpsManager.PausedNotedAppOpsCollection prevCollection =
+                AppOpsManager.pauseNotedAppOpsCollection();
+
         if ((flags & FLAG_ONEWAY) == 0 && AppOpsManager.isListeningForOpNoted()) {
             flags |= FLAG_COLLECT_NOTED_APP_OPS;
         }
@@ -567,6 +570,8 @@ public final class BinderProxy implements IBinder {
         try {
             return transactNative(code, data, reply, flags);
         } finally {
+            AppOpsManager.resumeNotedAppOpsCollection(prevCollection);
+
             if (transactListener != null) {
                 transactListener.onTransactEnded(session);
             }

@@ -10079,9 +10079,11 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                 }
                 AccessibilityNodeInfo cinfo = provider.createAccessibilityNodeInfo(
                         AccessibilityNodeInfo.getVirtualDescendantId(info.getChildId(i)));
-                ViewStructure child = structure.newChild(i);
-                populateVirtualStructure(child, provider, cinfo, forAutofill);
-                cinfo.recycle();
+                if (cinfo != null) {
+                    ViewStructure child = structure.newChild(i);
+                    populateVirtualStructure(child, provider, cinfo, forAutofill);
+                    cinfo.recycle();
+                }
             }
         }
     }
@@ -20828,13 +20830,14 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             mPrivateFlags &= ~PFLAG_SCROLL_CONTAINER_ADDED;
         }
 
+        notifyAppearedOrDisappearedForContentCaptureIfNeeded(false);
+
         mAttachInfo = null;
         if (mOverlay != null) {
             mOverlay.getOverlayView().dispatchDetachedFromWindow();
         }
 
         notifyEnterOrExitForAutoFillIfNeeded(false);
-        notifyAppearedOrDisappearedForContentCaptureIfNeeded(false);
     }
 
     /**

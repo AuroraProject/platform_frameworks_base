@@ -65,7 +65,7 @@
     <string name="wifi_passpoint_expired" msgid="6540867261754427561">"만료됨"</string>
     <string name="preference_summary_default_combination" msgid="2644094566845577901">"<xliff:g id="STATE">%1$s</xliff:g>/<xliff:g id="DESCRIPTION">%2$s</xliff:g>"</string>
     <string name="bluetooth_disconnected" msgid="7739366554710388701">"연결 끊김"</string>
-    <string name="bluetooth_disconnecting" msgid="7638892134401574338">"연결을 끊는 중…"</string>
+    <string name="bluetooth_disconnecting" msgid="7638892134401574338">"연결 해제 중…"</string>
     <string name="bluetooth_connecting" msgid="5871702668260192755">"연결 중…"</string>
     <string name="bluetooth_connected" msgid="8065345572198502293">"연결됨<xliff:g id="ACTIVE_DEVICE">%1$s</xliff:g>"</string>
     <string name="bluetooth_pairing" msgid="4269046942588193600">"페어링 중..."</string>
@@ -462,7 +462,7 @@
     <string name="battery_info_status_charging_wireless" msgid="8924722966861282197">"무선 충전 중"</string>
     <string name="battery_info_status_discharging" msgid="6962689305413556485">"충전 안함"</string>
     <string name="battery_info_status_not_charging" msgid="3371084153747234837">"연결됨, 충전 중 아님"</string>
-    <string name="battery_info_status_full" msgid="1339002294876531312">"청구됨"</string>
+    <string name="battery_info_status_full" msgid="1339002294876531312">"충전됨"</string>
     <string name="disabled_by_admin_summary_text" msgid="5343911767402923057">"관리자가 제어"</string>
     <string name="disabled" msgid="8017887509554714950">"사용 안함"</string>
     <string name="external_source_trusted" msgid="1146522036773132905">"허용됨"</string>
@@ -568,12 +568,9 @@
     <string name="guest_exit_guest" msgid="5908239569510734136">"게스트 삭제"</string>
     <string name="guest_reset_guest" msgid="6110013010356013758">"게스트 재설정"</string>
     <string name="guest_nickname" msgid="6332276931583337261">"게스트"</string>
-    <!-- no translation found for guest_reset_guest_dialog_title (8047270010895437534) -->
-    <skip />
-    <!-- no translation found for guest_reset_guest_confirm_button (2989915693215617237) -->
-    <skip />
-    <!-- no translation found for guest_resetting (7822120170191509566) -->
-    <skip />
+    <string name="guest_reset_guest_dialog_title" msgid="8047270010895437534">"게스트를 재설정하시겠습니까?"</string>
+    <string name="guest_reset_guest_confirm_button" msgid="2989915693215617237">"재설정"</string>
+    <string name="guest_resetting" msgid="7822120170191509566">"게스트 재설정 중…"</string>
     <string name="user_image_take_photo" msgid="467512954561638530">"사진 찍기"</string>
     <string name="user_image_choose_photo" msgid="1363820919146782908">"이미지 선택"</string>
     <string name="user_image_photo_selector" msgid="433658323306627093">"사진 선택"</string>

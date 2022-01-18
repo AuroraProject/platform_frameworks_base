@@ -19,7 +19,6 @@ package com.android.server.biometrics.sensors.fingerprint.aidl;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.TaskStackListener;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.hardware.biometrics.BiometricAuthenticator;
 import android.hardware.biometrics.BiometricFingerprintConstants;
@@ -27,10 +26,10 @@ import android.hardware.biometrics.BiometricFingerprintConstants.FingerprintAcqu
 import android.hardware.biometrics.BiometricsProtoEnums;
 import android.hardware.biometrics.common.ICancellationSignal;
 import android.hardware.biometrics.fingerprint.ISession;
+import android.hardware.fingerprint.FingerprintSensorPropertiesInternal;
 import android.hardware.fingerprint.IUdfpsOverlayController;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.provider.Settings;
 import android.util.Slog;
 
 import com.android.server.biometrics.Utils;
@@ -55,35 +54,63 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
 
     @NonNull private final LockoutCache mLockoutCache;
     @Nullable private final IUdfpsOverlayController mUdfpsOverlayController;
-    @Nullable private ICancellationSignal mCancellationSignal;
+    @NonNull private final FingerprintSensorPropertiesInternal mSensorProps;
+    @NonNull private final CallbackWithProbe<Probe> mALSProbeCallback;
 
-    @NonNull private final ContentResolver mContentResolver;
-    private final boolean mCustomHaptics;
+    @Nullable private ICancellationSignal mCancellationSignal;
+    private boolean mIsPointerDown;
 
     FingerprintAuthenticationClient(@NonNull Context context,
-            @NonNull LazyDaemon<ISession> lazyDaemon, @NonNull IBinder token,
+            @NonNull LazyDaemon<ISession> lazyDaemon,
+            @NonNull IBinder token, long requestId,
             @NonNull ClientMonitorCallbackConverter listener, int targetUserId, long operationId,
             boolean restricted, @NonNull String owner, int cookie, boolean requireConfirmation,
             int sensorId, boolean isStrongBiometric, int statsClient,
             @Nullable TaskStackListener taskStackListener, @NonNull LockoutCache lockoutCache,
             @Nullable IUdfpsOverlayController udfpsOverlayController,
-            boolean allowBackgroundAuthentication) {
+            boolean allowBackgroundAuthentication,
+            @NonNull FingerprintSensorPropertiesInternal sensorProps) {
         super(context, lazyDaemon, token, listener, targetUserId, operationId, restricted, owner,
                 cookie, requireConfirmation, sensorId, isStrongBiometric,
                 BiometricsProtoEnums.MODALITY_FINGERPRINT, statsClient, taskStackListener,
-                lockoutCache, allowBackgroundAuthentication);
+                lockoutCache, allowBackgroundAuthentication, true /* shouldVibrate */,
+                false /* isKeyguardBypassEnabled */);
+        setRequestId(requestId);
         mLockoutCache = lockoutCache;
         mUdfpsOverlayController = udfpsOverlayController;
+        mSensorProps = sensorProps;
+        mALSProbeCallback = createALSCallback(false /* startWithClient */);
+    }
 
-        mContentResolver = context.getContentResolver();
-        mCustomHaptics = Settings.Global.getInt(mContentResolver,
-            "fp_custom_success_error", 0) == 1;
+    @Override
+    public void start(@NonNull Callback callback) {
+        super.start(callback);
+
+        if (mSensorProps.isAnyUdfpsType()) {
+            // UDFPS requires user to touch before becoming "active"
+            mState = STATE_STARTED_PAUSED;
+        } else {
+            mState = STATE_STARTED;
+        }
     }
 
     @NonNull
     @Override
     protected Callback wrapCallbackForStart(@NonNull Callback callback) {
-        return new CompositeCallback(createALSCallback(), callback);
+        return new CompositeCallback(mALSProbeCallback, callback);
+    }
+
+    @Override
+    protected void handleLifecycleAfterAuth(boolean authenticated) {
+        if (authenticated) {
+            mCallback.onClientFinished(this, true /* success */);
+        }
+    }
+
+    @Override
+    public boolean wasUserDetected() {
+        // TODO: Update if it needs to be used for fingerprint, i.e. success/reject, error_timeout
+        return false;
     }
 
     @Override
@@ -92,8 +119,10 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
         super.onAuthenticated(identifier, authenticated, token);
 
         if (authenticated) {
+            mState = STATE_STOPPED;
             UdfpsHelper.hideUdfpsOverlay(getSensorId(), mUdfpsOverlayController);
-            mCallback.onClientFinished(this, true /* success */);
+        } else {
+            mState = STATE_STARTED_PAUSED_ATTEMPTED;
         }
     }
 
@@ -112,7 +141,7 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
     public void onError(int errorCode, int vendorCode) {
         super.onError(errorCode, vendorCode);
 
-        if (errorCode == BiometricFingerprintConstants.FINGERPRINT_ERROR_BAD_CALIBARTION) {
+        if (errorCode == BiometricFingerprintConstants.FINGERPRINT_ERROR_BAD_CALIBRATION) {
             BiometricNotificationUtils.showBadCalibrationNotification(getContext());
         }
 
@@ -137,20 +166,28 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
     @Override
     protected void stopHalOperation() {
         UdfpsHelper.hideUdfpsOverlay(getSensorId(), mUdfpsOverlayController);
-        try {
-            mCancellationSignal.cancel();
-        } catch (RemoteException e) {
-            Slog.e(TAG, "Remote exception", e);
-            onError(BiometricFingerprintConstants.FINGERPRINT_ERROR_HW_UNAVAILABLE,
-                    0 /* vendorCode */);
-            mCallback.onClientFinished(this, false /* success */);
+        if (mCancellationSignal != null) {
+            try {
+                mCancellationSignal.cancel();
+            } catch (RemoteException e) {
+                Slog.e(TAG, "Remote exception", e);
+                onError(BiometricFingerprintConstants.FINGERPRINT_ERROR_HW_UNAVAILABLE,
+                        0 /* vendorCode */);
+                mCallback.onClientFinished(this, false /* success */);
+            }
+        } else {
+            Slog.e(TAG, "cancellation signal was null");
         }
     }
 
     @Override
     public void onPointerDown(int x, int y, float minor, float major) {
         try {
+            mIsPointerDown = true;
+            mState = STATE_STARTED;
+            mALSProbeCallback.getProbe().enable();
             getFreshDaemon().onPointerDown(0 /* pointerId */, x, y, minor, major);
+
             if (getListener() != null) {
                 getListener().onUdfpsPointerDown(getSensorId());
             }
@@ -162,13 +199,22 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
     @Override
     public void onPointerUp() {
         try {
+            mIsPointerDown = false;
+            mState = STATE_STARTED_PAUSED_ATTEMPTED;
+            mALSProbeCallback.getProbe().disable();
             getFreshDaemon().onPointerUp(0 /* pointerId */);
+
             if (getListener() != null) {
                 getListener().onUdfpsPointerUp(getSensorId());
             }
         } catch (RemoteException e) {
             Slog.e(TAG, "Remote exception", e);
         }
+    }
+
+    @Override
+    public boolean isPointerDown() {
+        return mIsPointerDown;
     }
 
     @Override
@@ -212,19 +258,5 @@ class FingerprintAuthenticationClient extends AuthenticationClient<ISession> imp
 
         UdfpsHelper.hideUdfpsOverlay(getSensorId(), mUdfpsOverlayController);
         mCallback.onClientFinished(this, false /* success */);
-    }
-
-    @Override
-    protected boolean successHapticsEnabled() {
-        return mCustomHaptics
-            ? Settings.Global.getInt(mContentResolver, "fp_success_enabled", 1) == 0
-            : super.successHapticsEnabled();
-    }
-
-    @Override
-    protected boolean errorHapticsEnabled() {
-        return mCustomHaptics
-            ? Settings.Global.getInt(mContentResolver, "fp_error_enabled", 1) == 0
-            : super.errorHapticsEnabled();
     }
 }

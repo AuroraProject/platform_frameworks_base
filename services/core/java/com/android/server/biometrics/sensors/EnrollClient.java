@@ -31,16 +31,16 @@ import java.util.Arrays;
 /**
  * A class to keep track of the enrollment state for a given client.
  */
-public abstract class EnrollClient<T> extends AcquisitionClient<T> {
+public abstract class EnrollClient<T> extends AcquisitionClient<T> implements EnrollmentModifier {
 
     private static final String TAG = "Biometrics/EnrollClient";
 
     protected final byte[] mHardwareAuthToken;
     protected final int mTimeoutSec;
     protected final BiometricUtils mBiometricUtils;
-    private final boolean mShouldVibrate;
 
     private long mEnrollmentStartTimeMs;
+    private final boolean mHasEnrollmentsBeforeStarting;
 
     /**
      * @return true if the user has already enrolled the maximum number of templates.
@@ -50,15 +50,25 @@ public abstract class EnrollClient<T> extends AcquisitionClient<T> {
     public EnrollClient(@NonNull Context context, @NonNull LazyDaemon<T> lazyDaemon,
             @NonNull IBinder token, @NonNull ClientMonitorCallbackConverter listener, int userId,
             @NonNull byte[] hardwareAuthToken, @NonNull String owner, @NonNull BiometricUtils utils,
-            int timeoutSec, int statsModality, int sensorId,
-            boolean shouldVibrate) {
+            int timeoutSec, int statsModality, int sensorId, boolean shouldVibrate) {
         super(context, lazyDaemon, token, listener, userId, owner, 0 /* cookie */, sensorId,
-                statsModality, BiometricsProtoEnums.ACTION_ENROLL,
+                shouldVibrate, statsModality, BiometricsProtoEnums.ACTION_ENROLL,
                 BiometricsProtoEnums.CLIENT_UNKNOWN);
         mBiometricUtils = utils;
         mHardwareAuthToken = Arrays.copyOf(hardwareAuthToken, hardwareAuthToken.length);
         mTimeoutSec = timeoutSec;
-        mShouldVibrate = shouldVibrate;
+        mHasEnrollmentsBeforeStarting = hasEnrollments();
+    }
+
+    @Override
+    public boolean hasEnrollmentStateChanged() {
+        final boolean hasEnrollmentsNow = hasEnrollments();
+        return hasEnrollmentsNow != mHasEnrollmentsBeforeStarting;
+    }
+
+    @Override
+    public boolean hasEnrollments() {
+        return !mBiometricUtils.getBiometricsForUser(getContext(), getTargetUserId()).isEmpty();
     }
 
     public void onEnrollResult(BiometricAuthenticator.Identifier identifier, int remaining) {

@@ -16,11 +16,15 @@
 
 package com.android.systemui.statusbar.phone;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -35,12 +39,15 @@ import android.view.ViewGroup;
 import androidx.test.filters.SmallTest;
 
 import com.android.internal.widget.LockPatternUtils;
+import com.android.keyguard.KeyguardMessageArea;
+import com.android.keyguard.KeyguardMessageAreaController;
 import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.keyguard.ViewMediatorCallback;
 import com.android.systemui.SysuiTestCase;
 import com.android.systemui.dock.DockManager;
 import com.android.systemui.keyguard.DismissCallbackRegistry;
 import com.android.systemui.keyguard.FaceAuthScreenBrightnessController;
+import com.android.systemui.keyguard.WakefulnessLifecycle;
 import com.android.systemui.navigationbar.NavigationModeController;
 import com.android.systemui.plugins.ActivityStarter.OnDismissAction;
 import com.android.systemui.statusbar.NotificationMediaManager;
@@ -89,8 +96,17 @@ public class StatusBarKeyguardViewManagerTest extends SysuiTestCase {
     @Mock
     private KeyguardBouncer.Factory mKeyguardBouncerFactory;
     @Mock
+    private KeyguardMessageAreaController.Factory mKeyguardMessageAreaFactory;
+    @Mock
     private KeyguardBouncer mBouncer;
+    @Mock
+    private UnlockedScreenOffAnimationController mUnlockedScreenOffAnimationController;
+    @Mock
+    private StatusBarKeyguardViewManager.AlternateAuthInterceptor mAlternateAuthInterceptor;
+    @Mock
+    private KeyguardMessageArea mKeyguardMessageArea;
 
+    private WakefulnessLifecycle mWakefulnessLifecycle;
     private StatusBarKeyguardViewManager mStatusBarKeyguardViewManager;
 
     @Before
@@ -101,6 +117,8 @@ public class StatusBarKeyguardViewManagerTest extends SysuiTestCase {
                 any(KeyguardBouncer.BouncerExpansionCallback.class)))
                 .thenReturn(mBouncer);
 
+        when(mContainer.findViewById(anyInt())).thenReturn(mKeyguardMessageArea);
+        mWakefulnessLifecycle = new WakefulnessLifecycle(getContext(), null);
         mStatusBarKeyguardViewManager = new StatusBarKeyguardViewManager(
                 getContext(),
                 mViewMediatorCallback,
@@ -114,7 +132,10 @@ public class StatusBarKeyguardViewManagerTest extends SysuiTestCase {
                 mKeyguardStateController,
                 Optional.of(mFaceAuthScreenBrightnessController),
                 mock(NotificationMediaManager.class),
-                mKeyguardBouncerFactory);
+                mKeyguardBouncerFactory,
+                mWakefulnessLifecycle,
+                mUnlockedScreenOffAnimationController,
+                mKeyguardMessageAreaFactory);
         mStatusBarKeyguardViewManager.registerStatusBar(mStatusBar, mContainer,
                 mNotificationPanelView, mBiometrucUnlockController,
                 mNotificationContainer, mBypassController);
@@ -265,6 +286,24 @@ public class StatusBarKeyguardViewManagerTest extends SysuiTestCase {
         mStatusBarKeyguardViewManager.hide(0, 30);
         verify(action).onDismiss();
         verify(cancelAction, never()).run();
+    }
+
+    @Test
+    public void testShowing_whenAlternateAuthShowing() {
+        mStatusBarKeyguardViewManager.setAlternateAuthInterceptor(mAlternateAuthInterceptor);
+        when(mBouncer.isShowing()).thenReturn(false);
+        when(mAlternateAuthInterceptor.isShowingAlternateAuthBouncer()).thenReturn(true);
+        assertTrue("Is showing not accurate when alternative auth showing",
+                mStatusBarKeyguardViewManager.isShowing());
+    }
+
+    @Test
+    public void testWillBeShowing_whenAlternateAuthShowing() {
+        mStatusBarKeyguardViewManager.setAlternateAuthInterceptor(mAlternateAuthInterceptor);
+        when(mBouncer.isShowing()).thenReturn(false);
+        when(mAlternateAuthInterceptor.isShowingAlternateAuthBouncer()).thenReturn(true);
+        assertTrue("Is or will be showing not accurate when alternative auth showing",
+                mStatusBarKeyguardViewManager.bouncerIsOrWillBeShowing());
     }
 
     @Test

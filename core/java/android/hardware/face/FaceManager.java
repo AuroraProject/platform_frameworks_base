@@ -58,7 +58,7 @@ import java.util.List;
 public class FaceManager implements BiometricAuthenticator, BiometricFaceConstants {
 
     private static final String TAG = "FaceManager";
-    private static final boolean DEBUG = true;
+
     private static final int MSG_ENROLL_RESULT = 100;
     private static final int MSG_ACQUIRED = 101;
     private static final int MSG_AUTHENTICATION_SUCCEEDED = 102;
@@ -74,7 +74,7 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
 
     private final IFaceService mService;
     private final Context mContext;
-    private IBinder mToken = new Binder();
+    private final IBinder mToken = new Binder();
     @Nullable private AuthenticationCallback mAuthenticationCallback;
     @Nullable private FaceDetectionCallback mFaceDetectionCallback;
     @Nullable private EnrollmentCallback mEnrollmentCallback;
@@ -86,7 +86,7 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
     private Face mRemovalFace;
     private Handler mHandler;
 
-    private IFaceServiceReceiver mServiceReceiver = new IFaceServiceReceiver.Stub() {
+    private final IFaceServiceReceiver mServiceReceiver = new IFaceServiceReceiver.Stub() {
 
         @Override // binder call
         public void onEnrollResult(Face face, int remaining) {
@@ -169,31 +169,6 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
     }
 
     /**
-     * Request authentication of a crypto object. This call operates the face recognition hardware
-     * and starts capturing images. It terminates when
-     * {@link AuthenticationCallback#onAuthenticationError(int, CharSequence)} or
-     * {@link AuthenticationCallback#onAuthenticationSucceeded(AuthenticationResult)} is called, at
-     * which point the object is no longer valid. The operation can be canceled by using the
-     * provided cancel object.
-     *
-     * @param crypto   object associated with the call or null if none required.
-     * @param cancel   an object that can be used to cancel authentication
-     * @param callback an object to receive authentication events
-     * @param handler  an optional handler to handle callback events
-     * @throws IllegalArgumentException if the crypto operation is not supported or is not backed
-     *                                  by
-     *                                  <a href="{@docRoot}training/articles/keystore.html">Android
-     *                                  Keystore facility</a>.
-     * @throws IllegalStateException    if the crypto primitive is not initialized.
-     * @hide
-     */
-    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
-    public void authenticate(@Nullable CryptoObject crypto, @Nullable CancellationSignal cancel,
-            @NonNull AuthenticationCallback callback, @Nullable Handler handler) {
-        authenticate(crypto, cancel, callback, handler, mContext.getUserId());
-    }
-
-    /**
      * Use the provided handler thread for events.
      */
     private void useHandler(Handler handler) {
@@ -224,19 +199,17 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
      * @throws IllegalStateException    if the crypto primitive is not initialized.
      * @hide
      */
+    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
     public void authenticate(@Nullable CryptoObject crypto, @Nullable CancellationSignal cancel,
-            @NonNull AuthenticationCallback callback, @Nullable Handler handler, int userId) {
+            @NonNull AuthenticationCallback callback, @Nullable Handler handler, int userId,
+            boolean isKeyguardBypassEnabled) {
         if (callback == null) {
             throw new IllegalArgumentException("Must supply an authentication callback");
         }
 
-        if (cancel != null) {
-            if (cancel.isCanceled()) {
-                Slog.w(TAG, "authentication already canceled");
-                return;
-            } else {
-                cancel.setOnCancelListener(new OnAuthenticationCancelListener(crypto));
-            }
+        if (cancel != null && cancel.isCanceled()) {
+            Slog.w(TAG, "authentication already canceled");
+            return;
         }
 
         if (mService != null) {
@@ -246,17 +219,18 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
                 mCryptoObject = crypto;
                 final long operationId = crypto != null ? crypto.getOpId() : 0;
                 Trace.beginSection("FaceManager#authenticate");
-                mService.authenticate(mToken, operationId, userId, mServiceReceiver,
-                        mContext.getOpPackageName());
+                final long authId = mService.authenticate(mToken, operationId, userId,
+                        mServiceReceiver, mContext.getOpPackageName(), isKeyguardBypassEnabled);
+                if (cancel != null) {
+                    cancel.setOnCancelListener(new OnAuthenticationCancelListener(authId));
+                }
             } catch (RemoteException e) {
                 Slog.w(TAG, "Remote exception while authenticating: ", e);
-                if (callback != null) {
-                    // Though this may not be a hardware issue, it will cause apps to give up or
-                    // try again later.
-                    callback.onAuthenticationError(FACE_ERROR_HW_UNAVAILABLE,
-                            getErrorString(mContext, FACE_ERROR_HW_UNAVAILABLE,
-                                    0 /* vendorCode */));
-                }
+                // Though this may not be a hardware issue, it will cause apps to give up or
+                // try again later.
+                callback.onAuthenticationError(FACE_ERROR_HW_UNAVAILABLE,
+                        getErrorString(mContext, FACE_ERROR_HW_UNAVAILABLE,
+                                0 /* vendorCode */));
             } finally {
                 Trace.endSection();
             }
@@ -278,14 +252,14 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
         if (cancel.isCanceled()) {
             Slog.w(TAG, "Detection already cancelled");
             return;
-        } else {
-            cancel.setOnCancelListener(new OnFaceDetectionCancelListener());
         }
 
         mFaceDetectionCallback = callback;
 
         try {
-            mService.detectFace(mToken, userId, mServiceReceiver, mContext.getOpPackageName());
+            final long authId = mService.detectFace(
+                    mToken, userId, mServiceReceiver, mContext.getOpPackageName());
+            cancel.setOnCancelListener(new OnFaceDetectionCancelListener(authId));
         } catch (RemoteException e) {
             Slog.w(TAG, "Remote exception when requesting finger detect", e);
         }
@@ -293,7 +267,7 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
 
     /**
      * Defaults to {@link FaceManager#enroll(int, byte[], CancellationSignal, EnrollmentCallback,
-     * int[], Surface)} with {@code surface} set to null.
+     * int[], Surface)} with {@code previewSurface} set to null.
      *
      * @see FaceManager#enroll(int, byte[], CancellationSignal, EnrollmentCallback, int[], Surface)
      * @hide
@@ -301,8 +275,8 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
     @RequiresPermission(MANAGE_BIOMETRIC)
     public void enroll(int userId, byte[] hardwareAuthToken, CancellationSignal cancel,
             EnrollmentCallback callback, int[] disabledFeatures) {
-        enroll(userId, hardwareAuthToken, cancel, callback, disabledFeatures, null /* surface */,
-                false /* debugConsent */);
+        enroll(userId, hardwareAuthToken, cancel, callback, disabledFeatures,
+                null /* previewSurface */, false /* debugConsent */);
     }
 
     /**
@@ -319,14 +293,14 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
      * @param cancel            an object that can be used to cancel enrollment
      * @param userId            the user to whom this face will belong to
      * @param callback          an object to receive enrollment events
-     * @param surface           optional camera preview surface for a single-camera device.
+     * @param previewSurface    optional camera preview surface for a single-camera device.
      *                          Must be null if not used.
      * @param debugConsent      a feature flag that the user has consented to debug.
      * @hide
      */
     @RequiresPermission(MANAGE_BIOMETRIC)
     public void enroll(int userId, byte[] hardwareAuthToken, CancellationSignal cancel,
-            EnrollmentCallback callback, int[] disabledFeatures, @Nullable Surface surface,
+            EnrollmentCallback callback, int[] disabledFeatures, @Nullable Surface previewSurface,
             boolean debugConsent) {
         if (callback == null) {
             throw new IllegalArgumentException("Must supply an enrollment callback");
@@ -346,7 +320,8 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
                 mEnrollmentCallback = callback;
                 Trace.beginSection("FaceManager#enroll");
                 mService.enroll(userId, mToken, hardwareAuthToken, mServiceReceiver,
-                        mContext.getOpPackageName(), disabledFeatures, surface, debugConsent);
+                        mContext.getOpPackageName(), disabledFeatures, previewSurface,
+                        debugConsent);
             } catch (RemoteException e) {
                 Slog.w(TAG, "Remote exception in enroll: ", e);
                 // Though this may not be a hardware issue, it will cause apps to give up or
@@ -748,23 +723,23 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
         }
     }
 
-    private void cancelAuthentication(CryptoObject cryptoObject) {
+    private void cancelAuthentication(long requestId) {
         if (mService != null) {
             try {
-                mService.cancelAuthentication(mToken, mContext.getOpPackageName());
+                mService.cancelAuthentication(mToken, mContext.getOpPackageName(), requestId);
             } catch (RemoteException e) {
                 throw e.rethrowFromSystemServer();
             }
         }
     }
 
-    private void cancelFaceDetect() {
+    private void cancelFaceDetect(long requestId) {
         if (mService == null) {
             return;
         }
 
         try {
-            mService.cancelFaceDetect(mToken, mContext.getOpPackageName());
+            mService.cancelFaceDetect(mToken, mContext.getOpPackageName(), requestId);
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
@@ -812,8 +787,13 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
                 }
             }
         }
+
+        // This is used as a last resort in case a vendor string is missing
+        // It should not happen for anything other than FACE_ERROR_VENDOR, but
+        // warn and use the default if all else fails.
         Slog.w(TAG, "Invalid error message: " + errMsg + ", " + vendorCode);
-        return "";
+        return context.getString(
+                com.android.internal.R.string.face_error_vendor_unknown);
     }
 
     /**
@@ -853,10 +833,10 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
      * @hide
      */
     public static class AuthenticationResult {
-        private Face mFace;
-        private CryptoObject mCryptoObject;
-        private int mUserId;
-        private boolean mIsStrongBiometric;
+        private final Face mFace;
+        private final CryptoObject mCryptoObject;
+        private final int mUserId;
+        private final boolean mIsStrongBiometric;
 
         /**
          * Authentication result
@@ -1127,22 +1107,30 @@ public class FaceManager implements BiometricAuthenticator, BiometricFaceConstan
     }
 
     private class OnAuthenticationCancelListener implements OnCancelListener {
-        private CryptoObject mCrypto;
+        private final long mAuthRequestId;
 
-        OnAuthenticationCancelListener(CryptoObject crypto) {
-            mCrypto = crypto;
+        OnAuthenticationCancelListener(long id) {
+            mAuthRequestId = id;
         }
 
         @Override
         public void onCancel() {
-            cancelAuthentication(mCrypto);
+            Slog.d(TAG, "Cancel face authentication requested for: " + mAuthRequestId);
+            cancelAuthentication(mAuthRequestId);
         }
     }
 
     private class OnFaceDetectionCancelListener implements OnCancelListener {
+        private final long mAuthRequestId;
+
+        OnFaceDetectionCancelListener(long id) {
+            mAuthRequestId = id;
+        }
+
         @Override
         public void onCancel() {
-            cancelFaceDetect();
+            Slog.d(TAG, "Cancel face detect requested for: " + mAuthRequestId);
+            cancelFaceDetect(mAuthRequestId);
         }
     }
 
