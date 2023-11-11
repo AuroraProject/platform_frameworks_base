@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.systemui.sospos
+package com.android.systemui.aurora
 
 import com.android.systemui.qs.tileimpl.QSTileImpl
 import com.android.systemui.qs.tiles.AmbientDisplayTile
@@ -37,7 +37,7 @@ import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
 
 @Module
-interface SospOSModule {
+interface AuroraModule {
 
     /** Inject AmbientDisplayTile into tileMap in QSModule */
     @Binds

@@ -346,7 +346,7 @@ oneway interface IStatusBar
      */
     void showMediaOutputSwitcher(String packageName);
     /**
-     * SOSP-OS
+     * Aurora
      */
     void toggleCameraFlash();
 }

@@ -231,7 +231,7 @@ interface IStatusBarService
     void showRearDisplayDialog(int currentBaseState);
 
     /**
-     * SOSP-OS
+     * Aurora
      */
     void toggleCameraFlash();
 }

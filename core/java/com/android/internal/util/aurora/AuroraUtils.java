@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.internal.util.sospos;
+package com.android.internal.util.aurora;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -28,7 +28,7 @@ import com.android.internal.statusbar.IStatusBarService;
 /**
  * Some custom utilities
  */
-public class SospOSUtils {
+public class AuroraUtils {
 
     public static void switchScreenOff(Context ctx) {
         PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);

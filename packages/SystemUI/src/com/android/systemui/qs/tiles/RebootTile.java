@@ -100,7 +100,7 @@ public class RebootTile extends QSTileImpl<BooleanState> {
 
     @Override
     public int getMetricsCategory() {
-        return MetricsEvent.SOSP_Metric;
+        return MetricsEvent.AURORA_Metric;
     }
 
     @Override

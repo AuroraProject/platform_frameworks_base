@@ -7438,7 +7438,7 @@ message MetricsEvent {
     // Add new aosp constants above this line.
     // END OF AOSP CONSTANTS
     
-    //SOSP-OS Metric Const.
-    SOSP_Metric = 2022;
+    //Aurora Metric Const.
+    AURORA_Metric = 2022;
   }
 }
